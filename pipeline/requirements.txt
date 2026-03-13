@@ -1,0 +1,12 @@
+# Ingestion
+psycopg[binary]
+requests
+python-dotenv
+
+# dbt
+dbt-postgres
+
+# Dagster
+dagster
+dagster-webserver
+dagster-dbt

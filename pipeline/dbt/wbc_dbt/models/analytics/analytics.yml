@@ -1,0 +1,447 @@
+version: 2
+
+models:
+  - name: game_results
+    description: >
+      One row per game across all WBC seasons (2006-2026).
+      Built entirely from stg_schedule (which joins raw.schedule + raw.games for
+      team abbreviations). Source of truth for standings derivation, bracket
+      rendering, and game result display. Includes round labeling, pool
+      assignment, and tournament format detection.
+    columns:
+      - name: game_pk
+        description: MLB Stats API primary key. Unique across all games and seasons.
+        tests:
+          - not_null
+          - unique
+      - name: season
+        description: Tournament year (2006, 2009, 2013, 2017, 2023, 2026).
+        tests:
+          - not_null
+      - name: official_date
+        description: Game date (YYYY-MM-DD).
+        tests:
+          - not_null
+      - name: day_night
+        description: >
+          Whether the game was played during the day or at night ('day' or 'night').
+          May be null on some legacy seasons.
+      - name: game_type
+        description: >
+          Round code from the MLB API. F = Pool play, D = Second Round (2006-2017)
+          or Quarterfinals (2023+), L = Semifinals, W = Championship.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['F', 'D', 'L', 'W']
+      - name: round_label
+        description: >
+          Human-readable round name (e.g. 'Pool Play', 'Second Round',
+          'Quarterfinals', 'Semifinals', 'Championship'). Use this for display.
+      - name: round_order
+        description: >
+          Integer sort order for rounds within a tournament (1=Pool Play,
+          2=Second Round or Quarterfinals, 3=Semifinals, 4=Championship).
+          Use for bracket rendering and chronological ordering.
+          Note: this is an integer, not a label string — use round_label for display.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4]
+      - name: tournament_format
+        description: >
+          Format identifier for this season. 'pool_then_second_round' (2006-2017)
+          uses D-type games for a second group stage. 'pool_then_quarterfinals'
+          (2023+) uses D-type games for single-elimination quarterfinals.
+          'unknown' is the fallback for any season not yet explicitly mapped.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['pool_then_second_round', 'pool_then_quarterfinals', 'unknown']
+      - name: pool_label
+        description: >
+          Raw pool identifier for pool play and second round games (e.g. 'A', 'B',
+          'C', 'D', '1', '2', 'E', 'F'). NULL for quarterfinals (2023+), semifinals,
+          and championship games. Extracted via anchored regex on description field.
+      - name: pool_display
+        description: >
+          Human-readable pool label for display (e.g. 'Pool A', 'Second Round Pool 1').
+          Prefer this over pool_label for frontend display.
+      - name: away_team_name
+        description: Full name of the away team.
+      - name: away_team_abbreviation
+        description: Away team abbreviation.
+      - name: away_team_id
+        description: >
+          MLB Stats API team ID for the away team. May be NULL for placeholder
+          teams (e.g. 'Semifinal 1 Winner') where no ID exists yet.
+      - name: home_team_name
+        description: Full name of the home team.
+      - name: home_team_abbreviation
+        description: Home team abbreviation.
+      - name: home_team_id
+        description: >
+          MLB Stats API team ID for the home team. May be NULL for placeholder teams.
+      - name: away_score
+        description: Final away team score. NULL on unplayed games (absent in API, never zero).
+      - name: home_score
+        description: Final home team score. NULL on unplayed games (absent in API, never zero).
+      - name: away_is_winner
+        description: >
+          True if the away team won. False if they lost. NULL on unplayed games
+          and on completed games where winner flags haven't yet populated (known API lag).
+          Used directly by standings.sql to compute per-team win/loss records.
+      - name: home_is_winner
+        description: >
+          True if the home team won. False if they lost. NULL on unplayed or lagging games.
+          Used directly by standings.sql to compute per-team win/loss records.
+      - name: winning_team_name
+        description: >
+          Full name of the winning team. Derived from away_is_winner / home_is_winner flags.
+          May be NULL on live games where the API populates score before winner flags —
+          re-ingestion resolves this. Not a model bug.
+      - name: winning_team_abbreviation
+        description: >
+          Abbreviation of the winning team. Same lag caveat as winning_team_name.
+          Used by standings.sql champions CTE to mark season champions.
+      - name: run_margin
+        description: >
+          Absolute run difference (|away_score - home_score|). NULL on unplayed games.
+          Useful for displaying blowout margin or mercy rule context.
+      - name: abstract_game_state
+        description: >
+          'Final' for completed games, 'Preview' for scheduled games,
+          'Live' for games currently in progress.
+      - name: detailed_state
+        description: >
+          'Final' = completed normally, 'Completed Early' = mercy rule,
+          'Scheduled' = not yet played, 'In Progress' = currently being played.
+      - name: is_mercy_rule
+        description: >
+          True if the game ended via the 10-run mercy rule. False for normal completions.
+          NULL for games not yet finished.
+      - name: venue_name
+        description: Stadium name.
+      - name: description
+        description: >
+          API game label. For unplayed knockout games contains matchup context
+          (e.g. 'Quarterfinal 2: Pool B Runner-Up vs. Pool A Winner'). Use for
+          bracket display when team names are placeholders. Also the source field
+          for pool_label / pool_display regex extraction.
+      - name: series_description
+        description: >
+          Series label from the API (e.g. 'World Baseball Classic Pool Play').
+          Useful for display context.
+      - name: if_necessary
+        description: >
+          Whether the game was conditional / if-necessary ('Y' or 'N').
+          Relevant for if-necessary pool play games.
+      - name: away_team_is_placeholder
+        description: >
+          True when the away team slot is not yet determined. Less reliable than
+          away_score IS NULL as the authoritative unplayed game signal.
+      - name: home_team_is_placeholder
+        description: True when the home team slot is not yet determined.
+
+  - name: standings
+    description: >
+      One row per team per season per round group. Tracks wins, losses, run
+      differential, and winning percentage. Derived from game_results.
+      Covers first-round pool play (all seasons) and second-round pools
+      (2006-2017 only). Excludes 2023/2026 quarterfinals (single-elimination,
+      no standings), semifinals, and finals.
+    columns:
+      - name: season
+        description: Tournament year.
+        tests:
+          - not_null
+      - name: round
+        description: >
+          Integer round identifier for this standings group.
+          1 = first-round pool play (all seasons).
+          2 = second-round pool play (2006-2017 only).
+          Use game_results.round_label for human-readable display.
+      - name: pool_label
+        description: Raw pool identifier (e.g. 'A', 'B', '1', '2', 'E', 'F').
+      - name: pool_display
+        description: Human-readable pool display name (e.g. 'Pool A', 'Second Round Pool 1').
+      - name: tournament_format
+        description: Format identifier — 'pool_then_second_round' or 'pool_then_quarterfinals'.
+      - name: team_name
+        description: Full team name.
+        tests:
+          - not_null
+      - name: team_abbreviation
+        description: Team abbreviation.
+      - name: pool_gp
+        description: Games played in this pool/group.
+        tests:
+          - not_null
+      - name: pool_wins
+        description: Wins in this pool/group.
+        tests:
+          - not_null
+      - name: pool_losses
+        description: Losses in this pool/group.
+        tests:
+          - not_null
+      - name: pool_run_differential
+        description: Total runs scored minus total runs allowed across pool/group games.
+      - name: pool_runs_scored
+        description: Total runs scored in pool/group games.
+      - name: pool_runs_allowed
+        description: Total runs allowed in pool/group games.
+      - name: pool_win_pct
+        description: Winning percentage (wins / games played, 3dp). NULL if no games played.
+      - name: is_champion
+        description: >
+          True if this team won the championship game in this season. False otherwise.
+          Derived by joining to the game_results championship row on season + team_abbreviation.
+          Will be false for all teams in a season until the championship game is confirmed
+          by the API (avoids marking a champion before winner flags are populated).
+
+  - name: player_game_stats
+    description: >
+      One row per player per game. Built from stg_player_game_stats left joined to
+      stg_players for bio enrichment. Source of truth for per-game box scores.
+      Only completed games (abstract_game_state = 'Final') are included.
+      Bio columns (birth_date, birth_country, bat_side etc.) are NULL if the player
+      is not found in raw.players — this is a coverage gap in ingestion, not a model bug.
+    columns:
+      - name: game_pk
+        description: MLB Stats API game primary key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('game_results')
+                field: game_pk
+      - name: season
+        description: Tournament year.
+        tests:
+          - not_null
+      - name: official_date
+        description: Game date (YYYY-MM-DD). Joined from stg_player_game_stats.
+      - name: team_side
+        description: "'home' or 'away' — which side of the game this player appeared on."
+      - name: team_abbreviation
+        description: Abbreviation of the team this player appeared for (e.g. 'JPN', 'USA').
+      - name: team_name
+        description: Full name of the team this player appeared for.
+      - name: represented_country
+        description: >
+          WBC country the player represented in this game, derived from team_name
+          in the boxscore. NOT the same as birth_country.
+      - name: person_id
+        description: MLB Stats API person ID. Joins to stg_players / raw.players.
+        tests:
+          - not_null
+      - name: full_name
+        description: Player full name from the boxscore.
+      - name: birth_date
+        description: >
+          Player's date of birth. Sourced from stg_players (left join). NULL if player
+          not found in raw.players. Use with season year to compute age at tournament time.
+      - name: birth_country
+        description: >
+          Player's country of birth. Sourced from stg_players. NOT the same as
+          represented_country — birthplace only.
+      - name: bat_side
+        description: Batting handedness (L/R/S). Sourced from stg_players. NULL if not found.
+      - name: pitch_hand
+        description: Throwing hand (L/R/S). Sourced from stg_players. NULL if not found.
+      - name: position_abbreviation
+        description: Position played in this game.
+      - name: position_type
+        description: Position category — 'Pitcher', 'Catcher', 'Infielder', 'Outfielder'.
+      - name: height
+        description: Player height string (e.g. "6' 2\""). Sourced from stg_players.
+      - name: weight
+        description: Player weight in pounds. Sourced from stg_players.
+      - name: mlb_debut_date
+        description: Date of MLB debut. Sourced from stg_players. NULL for non-MLB players.
+      - name: jersey_number
+        description: Jersey number for this game appearance. May be null.
+      - name: batting_order
+        description: Lineup position (1–9). NULL for bench/non-starters/no order assigned.
+      - name: batting_order_raw
+        description: >
+          Raw batting order from API (position × 100, e.g. 600 = 6th batter).
+          0 means no order assigned. Preserved alongside batting_order for reference.
+      - name: is_on_bench
+        description: True if the player appeared on the bench but did not play.
+      - name: is_substitute
+        description: True if the player entered as a substitute (not in starting lineup).
+      - name: batting_ab
+        description: At-bats in this game.
+      - name: batting_h
+        description: Hits in this game.
+      - name: batting_2b
+        description: Doubles in this game.
+      - name: batting_3b
+        description: Triples in this game.
+      - name: batting_hr
+        description: Home runs in this game.
+      - name: batting_rbi
+        description: RBI in this game.
+      - name: batting_r
+        description: Runs scored in this game.
+      - name: batting_bb
+        description: Walks in this game.
+      - name: batting_so
+        description: Strikeouts as a batter in this game.
+      - name: batting_sb
+        description: Stolen bases in this game.
+      - name: batting_lob
+        description: Runners left on base in this game.
+      - name: batting_sf
+        description: Sacrifice flies in this game.
+      - name: batting_hbp
+        description: Hit by pitch in this game.
+      - name: batting_avg
+        description: >
+          Batting average for this game only (batting_h / batting_ab), rounded to 3dp.
+          NULL if no at-bats. Note: this is single-game AVG, not tournament cumulative.
+          For tournament cumulative, see player_tournament_stats.season_batting_avg.
+      - name: pitching_ip_raw
+        description: Raw IP string from the API (e.g. "4.2"). Preserved for validation.
+      - name: pitching_ip
+        description: >
+          Innings pitched in decimal (e.g. "4.2" → 4.6667). The digit after the
+          decimal is outs (0/1/2), not a fraction. Rounded to 4dp.
+      - name: pitching_er
+        description: Earned runs allowed.
+      - name: pitching_r
+        description: Total runs allowed (earned + unearned).
+      - name: pitching_so
+        description: Strikeouts recorded as a pitcher.
+      - name: pitching_bb
+        description: Walks allowed as a pitcher.
+      - name: pitching_h
+        description: Hits allowed.
+      - name: pitching_hr
+        description: Home runs allowed.
+      - name: pitching_bf
+        description: Batters faced.
+      - name: pitching_w
+        description: Pitcher win (0 or 1).
+      - name: pitching_l
+        description: Pitcher loss (0 or 1).
+      - name: pitching_sv
+        description: Pitcher save (0 or 1).
+      - name: pitching_era
+        description: >
+          ERA for this game only (9 × pitching_er / pitching_ip), rounded to 2dp.
+          NULL if the pitcher recorded no outs (pitching_ip = 0 or null).
+          pitching_er is coalesced to 0, so a pitcher who allowed 0 earned runs
+          gets ERA 0.00 rather than NULL.
+
+  - name: player_tournament_stats
+    description: >
+      One row per player per season. Tournament-level cumulative statistics.
+      Source of truth for leaderboards (batting average, ERA, HR, RBI, etc.).
+      All season_* columns come from the MLB API seasonStats field on each player's
+      last game appearance — they are pre-computed cumulative totals, not re-aggregated
+      from individual game rows. Season_avg/obp/slg/ops/era are strings as returned
+      by the API (e.g. '.321', '1.50').
+      Bio columns (birth_date, bat_side, height etc.) come from stg_players left join
+      and are NULL if the player is not in raw.players.
+    columns:
+      - name: person_id
+        description: MLB Stats API person ID.
+        tests:
+          - not_null
+      - name: season
+        description: Tournament year.
+        tests:
+          - not_null
+      - name: full_name
+        description: Player full name.
+      - name: represented_country
+        description: >
+          Country the player represented in the tournament. Derived from the team
+          they appeared for in boxscores. NOT the same as birth_country.
+        tests:
+          - not_null
+      - name: team_name
+        description: Full name of the team this player represented in this season.
+      - name: team_abbreviation
+        description: Abbreviation of the team this player represented.
+      - name: position_abbreviation
+        description: Primary position abbreviation for this player in this season.
+      - name: position_type
+        description: Position category — 'Pitcher', 'Catcher', 'Infielder', 'Outfielder'.
+      - name: games_played
+        description: >
+          Total distinct games the player appeared in during this tournament season.
+          Counted from stg_player_game_stats as distinct game_pk values, computed
+          separately from the DISTINCT ON season stats selection.
+      - name: birth_date
+        description: >
+          Player's date of birth. Use with season year to compute age at tournament time
+          (e.g. for age-based leaderboard filtering). NULL if player not in raw.players.
+      - name: birth_country
+        description: >
+          Player's country of birth. NOT the same as represented_country —
+          birthplace only. NULL if player not in raw.players.
+      - name: bat_side
+        description: >
+          Batting handedness (L/R/S). Useful for leaderboard filtering
+          (e.g. left-handed hitters HR leaders). NULL if player not in raw.players.
+      - name: pitch_hand
+        description: >
+          Throwing hand (L/R/S). Useful for leaderboard filtering
+          (e.g. left-handed pitcher ERA leaders). NULL if player not in raw.players.
+      - name: height
+        description: Player height string. NULL if player not in raw.players.
+      - name: weight
+        description: Player weight in pounds. NULL if player not in raw.players.
+      - name: mlb_debut_date
+        description: Date of MLB debut. NULL for non-MLB players or missing bio.
+      - name: is_active
+        description: Whether the player is currently active in MLB. NULL if bio not found.
+      - name: season_batting_avg
+        description: Tournament batting average as API string (e.g. '.321').
+      - name: season_batting_obp
+        description: Tournament on-base percentage as API string.
+      - name: season_batting_slg
+        description: Tournament slugging percentage as API string.
+      - name: season_batting_ops
+        description: Tournament OPS as API string.
+      - name: season_batting_ab
+        description: Total at-bats in the tournament.
+      - name: season_batting_h
+        description: Total hits in the tournament.
+      - name: season_batting_hr
+        description: Total home runs in the tournament.
+      - name: season_batting_rbi
+        description: Total RBI in the tournament.
+      - name: season_batting_r
+        description: Total runs scored in the tournament.
+      - name: season_batting_bb
+        description: Total walks (batting) in the tournament.
+      - name: season_batting_so
+        description: Total strikeouts as a batter in the tournament.
+      - name: season_batting_sb
+        description: Total stolen bases in the tournament.
+      - name: season_pitching_ip_raw
+        description: Cumulative innings pitched as raw API string (outs notation).
+      - name: season_pitching_ip
+        description: Cumulative innings pitched as true decimal (e.g. 14.6667).
+      - name: season_pitching_era
+        description: Tournament ERA as API string (e.g. '1.50').
+      - name: season_pitching_w
+        description: Total pitching wins in the tournament.
+      - name: season_pitching_l
+        description: Total pitching losses in the tournament.
+      - name: season_pitching_sv
+        description: Total saves in the tournament.
+      - name: season_pitching_so
+        description: Total strikeouts recorded as a pitcher in the tournament.
+      - name: season_pitching_bb
+        description: Total walks allowed as a pitcher in the tournament.
+      - name: season_pitching_bf
+        description: Total batters faced as a pitcher in the tournament.

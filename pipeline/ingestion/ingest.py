@@ -12,7 +12,6 @@ Flow:
 4. Smart skip: completed seasons skipped on rerun, current season always refreshed
 
 raw.schedule and raw.games are joined in dbt on gamePk to produce analytics tables.
-No schedule fields are injected into boxscore blobs — transformation is dbt's job.
 
 Usage:
   python ingest.py --verify          # Check existing data counts/shapes

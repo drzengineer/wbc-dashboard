@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    description: "Raw data landed by the MLB Stats API ingestion pipeline."
+    tables:
+      - name: games
+        description: "Raw boxscore blobs from the MLB Stats API. One row per game_pk."
+      - name: players
+        description: "Raw player objects from /api/v1/sports/51/players. One row per player_id."
+      - name: schedule
+        description: "Raw schedule game objects from the MLB Stats API. One row per game_pk."

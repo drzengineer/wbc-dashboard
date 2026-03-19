@@ -1,6 +1,6 @@
 with source as (
     select game_pk, data, ingested_at
-    from raw.schedule
+    from {{ source('raw', 'schedule') }}
 ),
 
 -- raw.schedule team objects only contain id/link/name — no abbreviation field
@@ -11,7 +11,7 @@ game_abbrevs as (
         game_pk,
         data->'teams'->'away'->'team'->>'abbreviation'  as away_team_abbreviation,
         data->'teams'->'home'->'team'->>'abbreviation'  as home_team_abbreviation
-    from raw.games
+    from {{ source('raw', 'games') }}
 ),
 
 flattened as (

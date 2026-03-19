@@ -2,14 +2,10 @@ with games as (
     select
         g.game_pk,
         g.data,
-        -- season and official_date live in the data blob, not as top-level columns
         (s.data->>'season')::int            as season,
         (s.data->>'officialDate')::date     as official_date
-    from raw.games g
-    join raw.schedule s on g.game_pk = s.game_pk
-    -- Only process completed games — scheduled games have empty {} players object
-    -- Live games are excluded intentionally: partial-game seasonStats would poison
-    -- tournament leaderboards. Stats for live games appear after re-ingestion.
+    from {{ source('raw', 'games') }} g
+    join {{ source('raw', 'schedule') }} s on g.game_pk = s.game_pk
     where s.data->'status'->>'abstractGameState' = 'Final'
 ),
 

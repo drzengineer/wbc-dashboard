@@ -22,6 +22,7 @@ Usage:
 
 import os
 import sys
+sys.stdout.reconfigure(encoding='utf-8')
 import time
 import json
 import argparse
@@ -461,6 +462,21 @@ def main():
             ingest_players(conn)
             ingest_games(conn)
             print_summary(conn)
+    finally:
+        conn.close()
+        print("\nINFO: Connection closed.")
+
+def run():
+    """
+    Programmatic entry point for Dagster (bypasses argparse).
+    Runs the full pipeline: players → schedule → games → summary.
+    """
+    cfg  = load_config()
+    conn = get_db_connection(cfg)
+    try:
+        ingest_players(conn)
+        ingest_games(conn)
+        print_summary(conn)
     finally:
         conn.close()
         print("\nINFO: Connection closed.")

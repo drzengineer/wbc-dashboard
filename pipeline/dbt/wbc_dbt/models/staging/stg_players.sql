@@ -1,6 +1,6 @@
 with source as (
     select player_id, data, ingested_at
-    from raw.players
+    from {{ source('raw', 'players') }}
 ),
 
 flattened as (

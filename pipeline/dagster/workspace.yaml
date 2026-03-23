@@ -1,0 +1,6 @@
+# pipeline/dagster/workspace.yaml
+load_from:
+  - python_file:
+      relative_path: wbc_dagster/definitions.py
+      working_directory: /app/dagster
+      attribute: defs

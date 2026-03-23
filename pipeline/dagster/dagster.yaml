@@ -1,2 +1,7 @@
 telemetry:
   enabled: false
+
+storage:
+  sqlite:
+    base_dir:
+      env: DAGSTER_HOME

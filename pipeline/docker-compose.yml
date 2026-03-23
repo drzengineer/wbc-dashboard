@@ -1,0 +1,17 @@
+services:
+  pipeline:
+    image: wbc-pipeline
+    container_name: wbc-pipeline
+    build:
+      context: .         # pipeline/ is the build context
+      dockerfile: Dockerfile
+    env_file:
+      - ../.env.local    # repo root .env.local injected at runtime
+    ports:
+      - "3000:3000"      # Dagster UI
+    volumes:
+      - dagster_home:/app/.dagster_home   # run history persists across restarts
+    restart: unless-stopped
+
+volumes:
+  dagster_home:

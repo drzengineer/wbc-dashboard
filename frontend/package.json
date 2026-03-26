@@ -21,7 +21,8 @@
 		"vite": "^7.3.1"
 	},
 	"dependencies": {
-		"@anthropic-ai/sdk": "^0.80.0",
-		"@supabase/supabase-js": "^2.100.0"
+		"@supabase/supabase-js": "^2.100.0",
+		"groq-sdk": "^1.1.2",
+		"voyageai": "^0.2.1"
 	}
 }

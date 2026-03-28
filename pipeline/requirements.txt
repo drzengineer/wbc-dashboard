@@ -2,6 +2,10 @@
 psycopg[binary]
 requests
 python-dotenv
+sentence-transformers
+pgvector
+numpy
+requests
 
 # dbt
 dbt-postgres

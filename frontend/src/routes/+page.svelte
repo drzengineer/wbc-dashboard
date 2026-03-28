@@ -1,44 +1,17 @@
 <script lang="ts">
-let question = $state("");
-let answer = $state("");
-let loading = $state(false);
-
-async function ask() {
-	loading = true;
-	answer = "";
-
-	const res = await fetch("/api/chat", {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ question }),
-	});
-
-	if (!res.ok || !res.body) {
-		answer = "Something went wrong.";
-		loading = false;
-		return;
-	}
-
-	const reader = res.body.getReader();
-	const decoder = new TextDecoder();
-
-	while (true) {
-		const { done, value } = await reader.read();
-		if (done) break;
-		answer += decoder.decode(value, { stream: true });
-	}
-
-	loading = false;
-}
+  const { data } = $props();
 </script>
 
-<main>
-  <h1>WBC RAG Test</h1>
-  <input bind:value={question} placeholder="Ask about the WBC..." />
-  <button onclick={ask} disabled={loading}>
-    {loading ? 'Thinking...' : 'Ask'}
-  </button>
-  {#if answer}
-    <p>{answer}</p>
-  {/if}
-</main>
+<h1 class="text-2xl font-bold mb-6">Dashboard</h1>
+
+<div class="grid grid-cols-2 gap-6">
+  <section>
+    <h2 class="text-lg font-semibold mb-3 text-gray-300">Recent Games</h2>
+    <p class="text-gray-500 text-sm">{data.recentGames.length} games loaded — UI coming Day 10</p>
+  </section>
+
+  <section>
+    <h2 class="text-lg font-semibold mb-3 text-gray-300">Standings</h2>
+    <p class="text-gray-500 text-sm">{data.standings.length} rows loaded — UI coming Day 10</p>
+  </section>
+</div>

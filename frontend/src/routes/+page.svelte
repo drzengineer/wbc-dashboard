@@ -72,10 +72,10 @@
 
   function flag(abbr?: string, name?: string): string {
     if (abbr && FLAG_IMAGES[abbr]) {
-      return `<img src="${FLAG_IMAGES[abbr]}" alt="${abbr}" class="flag-icon" width="24" height="16">`;
+      return `<img src="${FLAG_IMAGES[abbr]}" alt="${abbr}" >`;
     }
     if (name && FLAG_IMAGES[name]) {
-      return `<img src="${FLAG_IMAGES[name]}" alt="${name}" class="flag-icon" width="24" height="16">`;
+      return `<img src="${FLAG_IMAGES[name]}" alt="${name}">`;
     }
     return '<span class="w-[24px] h-[16px] inline-block bg-gray-700 rounded"></span>';
   }
@@ -166,21 +166,11 @@
   }
 </script>
 
-<style>
-  .flag-icon {
-    vertical-align: middle;
-    margin: 200px;
-    border-radius: 10px;
-  }
-</style>
-
-<div class="space-y-10">
+<div class="space-y-8">
 
   <div>
     <h1 class="text-2xl font-bold text-white tracking-tight">Dashboard</h1>
-    <p class="text-sm text-gray-400 mt-1">World Baseball Classic — standings & results</p>
   </div>
-
   <!-- Season tabs -->
   <div class="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit">
     {#each seasons as season}
@@ -217,7 +207,7 @@
                 {i > 0 ? 'border-t border-gray-800/50' : ''}
                 {row.isWinner ? 'bg-yellow-500/10' : ''}">
                 <div class="flex items-center gap-2 min-w-0">
-                  <span class="inline-block w-[24px] h-[16px]">{@html flag(row.abbr, row.name)}</span>
+                  <span class="inline-block w-8">{@html flag(row.abbr, row.name)}</span>
                   <span class="text-base font-semibold {row.isWinner ? 'text-yellow-400' : 'text-gray-400'}">
                     {#if row.isWinner}🏆 {/if}{row.abbr ?? row.name}
                   </span>
@@ -260,7 +250,7 @@
                     {i > 0 ? 'border-t border-gray-800/50' : ''}
                     {row.isWinner ? 'bg-gray-800/60' : ''}">
                     <div class="flex items-center gap-1.5 min-w-0">
-                      <span class="inline-block w-[20px] h-[14px]">{@html flag(row.abbr, row.name)}</span>
+                      <span class="inline-block w-7">{@html flag(row.abbr, row.name)}</span>
                       <span class="text-sm font-medium {row.isWinner ? 'text-white' : 'text-gray-500'} truncate">
                         {row.abbr ?? row.name}
                       </span>
@@ -304,7 +294,7 @@
                       {i > 0 ? 'border-t border-gray-800/50' : ''}
                       {row.isWinner ? 'bg-gray-800/60' : ''}">
                       <div class="flex items-center gap-1.5 min-w-0">
-                        <span class="inline-block w-[20px] h-[14px]">{@html flag(row.abbr, row.name)}</span>
+                        <span class="inline-block w-6">{@html flag(row.abbr, row.name)}</span>
                         <span class="text-sm font-medium {row.isWinner ? 'text-white' : 'text-gray-500'} truncate">
                           {row.abbr ?? row.name}
                         </span>
@@ -364,7 +354,7 @@
                   <td class="px-4 py-2.5 font-medium text-white">
                     <div class="flex items-center gap-2">
                       {#if team.is_champion}
-                        <span class="text-yellow-400">🏆</span>
+                        <span class="w-4 text-yellow-400">🏆</span>
                       {:else if i === 0}
                         <span class="w-4 text-center text-green-400 text-xs">●</span>
                       {:else if i === 1}
@@ -372,7 +362,7 @@
                       {:else}
                         <span class="w-4"></span>
                       {/if}
-                      <span class="inline-block w-[20px] h-[14px]">{@html flag(team.team_abbreviation, team.team_name)}</span>
+                      <span class="inline-block w-6 shrink-0">{@html flag(team.team_abbreviation, team.team_name)}</span>
                       <span>{team.team_abbreviation ?? team.team_name}</span>
                       <span class="text-gray-500 text-xs hidden sm:inline">{team.team_name}</span>
                     </div>
@@ -408,7 +398,7 @@
             <div class="flex items-center justify-between gap-4 flex-wrap">
               <div class="flex items-center gap-3">
                 <div class="flex items-center gap-2">
-                  <span class="inline-block w-[20px] h-[14px]">{@html flag((game as any).away_team_abbreviation, (game as any).away_team_name)}</span>
+                  <span class="inline-block w-6">{@html flag((game as any).away_team_abbreviation, (game as any).away_team_name)}</span>
                   <span class="font-semibold text-white text-sm w-10 text-right shrink-0">
                     {(game as any).away_team_abbreviation ?? (game as any).away_team_name}
                   </span>
@@ -424,7 +414,7 @@
                   <span class="font-semibold text-white text-sm w-10 shrink-0">
                     {(game as any).home_team_abbreviation ?? (game as any).home_team_name}
                   </span>
-                  <span class="inline-block w-[20px] h-[14px]">{@html flag((game as any).home_team_abbreviation, (game as any).home_team_name)}</span>
+                  <span class="inline-block w-6">{@html flag((game as any).home_team_abbreviation, (game as any).home_team_name)}</span>
                 </div>
                 {#if (game as any).is_mercy_rule}
                   <span class="text-xs bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded px-1.5 py-0.5 shrink-0">Mercy</span>

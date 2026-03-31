@@ -15,5 +15,13 @@ export const load: PageServerLoad = async () => {
 		.order("official_date", { ascending: false })
 		.limit(10);
 
-	return { standings: standings ?? [], recentGames: recentGames ?? [] };
+	const { data: knockoutGames } = await supabase
+		.from("game_results")
+		.select("*")
+		.in("game_type", ["D", "L", "W"])
+		.eq("abstract_game_state", "Final")
+		.order("season", { ascending: false })
+		.order("official_date", { ascending: true });
+
+	return { standings: standings ?? [], recentGames: recentGames ?? [], knockoutGames: knockoutGames ?? []  };
 };

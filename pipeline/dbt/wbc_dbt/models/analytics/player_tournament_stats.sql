@@ -82,7 +82,7 @@ season_totals as (
         gs.season_pitching_bf
 
     from game_stats gs
-    order by gs.person_id, gs.season, gs.game_pk desc
+    order by gs.person_id, gs.season, gs.official_date desc, gs.game_pk desc
 )
 
 select

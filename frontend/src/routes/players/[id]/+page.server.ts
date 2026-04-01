@@ -4,56 +4,53 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
-	const personId = Number(params.id);
-	if (!personId || isNaN(personId)) throw error(404, 'Player not found');
+  const personId = Number(params.id);
+  if (!personId || isNaN(personId)) throw error(404, 'Player not found');
 
-	// All tournament seasons for this player
-	const { data: tournamentStats } = await supabase
-		.from('player_tournament_stats')
-		.select('*')
-		.eq('person_id', personId)
-		.order('season', { ascending: false });
+  // Fetch tournament stats and game logs in parallel
+  const [{ data: tournamentStats }, { data: gameLogs }] = await Promise.all([
+    supabase
+      .from('player_tournament_stats')
+      .select('*')
+      .eq('person_id', personId)
+      .order('season', { ascending: false }),
 
-	if (!tournamentStats || tournamentStats.length === 0) {
-		throw error(404, 'Player not found');
-	}
+    supabase
+      .from('player_game_stats')
+      .select('game_pk,season,official_date,team_abbreviation,team_side,represented_country,position_abbreviation,position_type,batting_order,is_on_bench,is_substitute,batting_ab,batting_h,batting_2b,batting_3b,batting_hr,batting_rbi,batting_r,batting_bb,batting_so,batting_sb,batting_avg,pitching_ip,pitching_er,pitching_r,pitching_so,pitching_bb,pitching_h,pitching_hr,pitching_bf,pitching_w,pitching_l,pitching_sv,pitching_era')
+      .eq('person_id', personId)
+      .order('season', { ascending: false })
+      .order('official_date', { ascending: true }),
+  ]);
 
-	// Game-by-game logs — player_game_stats doesn't have opponent or scores,
-	// so we also fetch game_results and merge on game_pk client-side.
-	const { data: gameLogs } = await supabase
-		.from('player_game_stats')
-		.select('*')
-		.eq('person_id', personId)
-		.order('season', { ascending: false })
-		.order('official_date', { ascending: true });
+  if (!tournamentStats || tournamentStats.length === 0) {
+    throw error(404, 'Player not found');
+  }
 
-	// Fetch game_results for all games this player appeared in so we can
-	// show opponent abbreviation and final score in the game log.
-	const gamePks = [...new Set((gameLogs ?? []).map((g: any) => g.game_pk))];
-	let gameResults: any[] = [];
-	if (gamePks.length > 0) {
-		const { data } = await supabase
-			.from('game_results')
-			.select('game_pk, away_team_abbreviation, home_team_abbreviation, away_score, home_score, round_label, pool_display')
-			.in('game_pk', gamePks);
-		gameResults = data ?? [];
-	}
+  // Fetch game results only for games this player appeared in
+  const gamePks = [...new Set((gameLogs ?? []).map((g: any) => g.game_pk))];
+  let gameResults: any[] = [];
+  if (gamePks.length > 0) {
+    const { data } = await supabase
+      .from('game_results')
+      .select('game_pk,away_team_abbreviation,home_team_abbreviation,away_score,home_score,round_label,pool_display')
+      .in('game_pk', gamePks);
+    gameResults = data ?? [];
+  }
 
-	// Build a lookup map: game_pk → game_results row
-	const gameResultMap: Record<number, any> = {};
-	for (const gr of gameResults) {
-		gameResultMap[gr.game_pk] = gr;
-	}
+  // Build lookup map and merge in one pass
+  const gameResultMap: Record<number, any> = Object.fromEntries(
+    gameResults.map(gr => [gr.game_pk, gr])
+  );
 
-	// Merge game_results fields onto each game log row
-	const mergedLogs = (gameLogs ?? []).map((g: any) => ({
-		...g,
-		_gr: gameResultMap[g.game_pk] ?? null,
-	}));
+  const mergedLogs = (gameLogs ?? []).map((g: any) => ({
+    ...g,
+    _gr: gameResultMap[g.game_pk] ?? null,
+  }));
 
-	return {
-		player: tournamentStats[0], // bio from most recent season
-		tournamentStats,
-		gameLogs: mergedLogs,
-	};
+  return {
+    player: tournamentStats[0],
+    tournamentStats,
+    gameLogs: mergedLogs,
+  };
 };

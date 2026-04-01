@@ -1,328 +1,210 @@
-<!-- src/routes/players/+page.svelte -->
 <script lang="ts">
-  import type { PageData } from './$types';
+  import { onMount } from 'svelte';
 
-  const { data }: { data: PageData } = $props();
+  const { data } = $props();
 
-  const allBatters  = data.batters  as any[];
-  const allPitchers = data.pitchers as any[];
+  type Tab = 'Batting' | 'Pitching';
+  let activeTab = $state<Tab>('Batting');
 
-  // ── Season filter ────────────────────────────────────────────
+  const batters  = $derived(data.batters as any[]);
+  const pitchers = $derived(data.pitchers as any[]);
+
   const seasons = $derived(
-    [...new Set([...allBatters, ...allPitchers].map((p) => p.season))]
-      .sort((a, b) => Number(b) - Number(a))
+    [...new Set([...batters, ...pitchers].map((p: any) => p.season))].sort((a, b) => b - a)
+  );
+  let selectedSeason = $state(seasons[0] ?? 2026);
+
+  // ─── Batting sort ────────────────────────────────────────────────────────────
+  type BatStat = 'season_batting_avg' | 'season_batting_hr' | 'season_batting_rbi' | 'season_batting_ops' | 'season_batting_sb';
+  const batStatLabels: Record<BatStat, string> = {
+    season_batting_avg: 'AVG', season_batting_hr: 'HR', season_batting_rbi: 'RBI',
+    season_batting_ops: 'OPS', season_batting_sb: 'SB',
+  };
+  let batSortKey = $state<BatStat>('season_batting_avg');
+
+  // ─── Pitching sort ───────────────────────────────────────────────────────────
+  type PitStat = 'season_pitching_era' | 'season_pitching_so' | 'season_pitching_ip' | 'season_pitching_w' | 'season_pitching_sv';
+  const pitStatLabels: Record<PitStat, string> = {
+    season_pitching_era: 'ERA', season_pitching_so: 'K', season_pitching_ip: 'IP',
+    season_pitching_w: 'W', season_pitching_sv: 'SV',
+  };
+  let pitSortKey = $state<PitStat>('season_pitching_era');
+
+  // ERA sorts ascending (lower = better); all others descending
+  const sortedBatters = $derived(
+    batters
+      .filter((p: any) => p.season === selectedSeason)
+      .filter((p: any) => p.season_batting_ab > 0)
+      .sort((a: any, b: any) => Number(b[batSortKey]) - Number(a[batSortKey]))
   );
 
-  let selectedSeason = $state('');
+  const sortedPitchers = $derived(
+    pitchers
+      .filter((p: any) => p.season === selectedSeason)
+      .filter((p: any) => (p.season_pitching_ip ?? 0) > 0)
+      .sort((a: any, b: any) => {
+        const av = Number(a[pitSortKey]);
+        const bv = Number(b[pitSortKey]);
+        return pitSortKey === 'season_pitching_era' ? av - bv : bv - av;
+      })
+  );
+
+  // ─── Incremental rendering ───────────────────────────────────────────────────
+  let visibleCount = $state(30);
+  let sentinelRef = $state<HTMLElement | null>(null);
+
+  onMount(() => {
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) visibleCount += 30;
+    }, { rootMargin: '200px' });
+    if (sentinelRef) io.observe(sentinelRef);
+    return () => io.disconnect();
+  });
 
   $effect(() => {
-    if (seasons.length && !seasons.includes(selectedSeason)) {
-      selectedSeason = seasons[0];
-    }
+    selectedSeason; activeTab; batSortKey; pitSortKey;
+    visibleCount = 30;
   });
 
-  // ── Tab state: which side + which stat ──────────────────────
-  type Side = 'batting' | 'pitching';
-  type BattingStat  = 'avg' | 'hr' | 'rbi' | 'ops' | 'sb';
-  type PitchingStat = 'era' | 'so' | 'ip'  | 'w'   | 'sv';
+  const displayRows = $derived(
+    (activeTab === 'Batting' ? sortedBatters : sortedPitchers).slice(0, visibleCount)
+  );
+  const totalRows = $derived(
+    (activeTab === 'Batting' ? sortedBatters : sortedPitchers).length
+  );
 
-  let side        = $state<Side>('batting');
-  let battingStat  = $state<BattingStat>('avg');
-  let pitchingStat = $state<PitchingStat>('era');
-
-  // ── Filtered pools ───────────────────────────────────────────
-  const batters  = $derived(allBatters.filter((p) => p.season === selectedSeason));
-  const pitchers = $derived(allPitchers.filter((p) => p.season === selectedSeason));
-
-  // ── Batting leaderboard ──────────────────────────────────────
-  const BATTING_STATS: { key: BattingStat; label: string; col: string; fmt: (v: any) => string; minAB: number }[] = [
-    { key: 'avg', label: 'AVG', col: 'season_batting_avg', fmt: fmtAvg, minAB: 5 },
-    { key: 'hr',  label: 'HR',  col: 'season_batting_hr',  fmt: (v) => v ?? '—', minAB: 0 },
-    { key: 'rbi', label: 'RBI', col: 'season_batting_rbi', fmt: (v) => v ?? '—', minAB: 0 },
-    { key: 'ops', label: 'OPS', col: 'season_batting_ops', fmt: fmtAvg, minAB: 5 },
-    { key: 'sb',  label: 'SB',  col: 'season_batting_sb',  fmt: (v) => v ?? '—', minAB: 0 },
-  ];
-
-  const activeBattingStat = $derived(BATTING_STATS.find((s) => s.key === battingStat)!);
-
-  const battingLeaders = $derived(() => {
-    const def = activeBattingStat;
-    return [...batters]
-      .filter((p) => {
-        if (def.minAB > 0 && (Number(p.season_batting_ab) || 0) < def.minAB) return false;
-        return p[def.col] != null;
-      })
-      .sort((a, b) => {
-        // ERA/rate stats: ascending; counting stats: descending
-        if (def.key === 'avg' || def.key === 'ops') {
-          return Number(b[def.col]) - Number(a[def.col]);
-        }
-        return Number(b[def.col]) - Number(a[def.col]);
-      })
-      .slice(0, 20);
-  });
-
-  // ── Pitching leaderboard ─────────────────────────────────────
-  const PITCHING_STATS: { key: PitchingStat; label: string; col: string; fmt: (v: any) => string; asc: boolean; minIP: number }[] = [
-    { key: 'era', label: 'ERA', col: 'season_pitching_era', fmt: fmtEra, asc: true,  minIP: 3 },
-    { key: 'so',  label: 'K',   col: 'season_pitching_so',  fmt: (v) => v ?? '—', asc: false, minIP: 0 },
-    { key: 'ip',  label: 'IP',  col: 'season_pitching_ip',  fmt: fmtIp, asc: false, minIP: 0 },
-    { key: 'w',   label: 'W',   col: 'season_pitching_w',   fmt: (v) => v ?? '—', asc: false, minIP: 0 },
-    { key: 'sv',  label: 'SV',  col: 'season_pitching_sv',  fmt: (v) => v ?? '—', asc: false, minIP: 0 },
-  ];
-
-  const activePitchingStat = $derived(PITCHING_STATS.find((s) => s.key === pitchingStat)!);
-
-  const pitchingLeaders = $derived(() => {
-    const def = activePitchingStat;
-    return [...pitchers]
-      .filter((p) => {
-        if (def.minIP > 0 && (Number(p.season_pitching_ip) || 0) < def.minIP) return false;
-        return p[def.col] != null;
-      })
-      .sort((a, b) =>
-        def.asc
-          ? Number(a[def.col]) - Number(b[def.col])
-          : Number(b[def.col]) - Number(a[def.col])
-      )
-      .slice(0, 20);
-  });
-
-  // ── Formatters ───────────────────────────────────────────────
-  function fmtAvg(val: any): string {
-    const n = Number(val);
-    if (isNaN(n)) return '—';
-    return n === 1 ? '1.000' : n === 0 ? '.000' : n.toFixed(3).replace('0.', '.');
-  }
-
-  function fmtEra(val: any): string {
-    const n = Number(val);
-    if (isNaN(n)) return '—';
-    return n.toFixed(2);
-  }
-
-  function fmtIp(val: any): string {
-    const n = Number(val);
-    if (isNaN(n)) return '—';
-    return n.toFixed(1);
-  }
-
-  function countryFlag(abbr?: string): string {
-    const FLAGS: Record<string, string> = {
-      'USA': 'us', 'DOM': 'do', 'PUR': 'pr', 'JPN': 'jp', 'CUB': 'cu',
-      'VEN': 've', 'MEX': 'mx', 'KOR': 'kr', 'NED': 'nl', 'ITA': 'it',
-      'AUS': 'au', 'CAN': 'ca', 'PAN': 'pa', 'TPE': 'tw', 'CHN': 'cn',
-      'NCA': 'ni', 'COL': 'co', 'ISR': 'il', 'GBR': 'gb', 'CZE': 'cz',
-      'ESP': 'es', 'RSA': 'za', 'NZL': 'nz', 'BRA': 'br', 'FRA': 'fr',
-      'GER': 'de', 'AUT': 'at', 'PHI': 'ph', 'PAK': 'pk', 'UGA': 'ug',
-      'ARG': 'ar',
-    };
-    const code = abbr ? FLAGS[abbr] : null;
-    if (!code) return '<span class="w-[20px] h-[14px] inline-block bg-gray-700 rounded"></span>';
-    return `<img src="https://flagcdn.com/${code}.svg" alt="${abbr}" class="w-[20px] h-[14px] rounded-sm object-cover">`;
+  function fmtAvg(v: any) { return v ? String(v).replace(/^0/, '') : '—'; }
+  function fmtNum(v: any) { return v != null ? v : '—'; }
+  function fmtIp(v: any) {
+    if (v == null) return '—';
+    const full = Math.floor(Number(v));
+    const frac = Math.round((Number(v) - full) * 3);
+    return frac === 0 ? `${full}.0` : `${full}.${frac}`;
   }
 </script>
 
-<div class="space-y-8">
-
-  <!-- Header -->
-  <div>
-    <h1 class="text-2xl font-bold text-white tracking-tight">Players</h1>
-  </div>
-
-  <!-- Season tabs -->
-  <div class="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit">
-    {#each seasons as season}
-      <button
-        type="button"
-        onclick={() => selectedSeason = season}
-        class="px-3 py-1 rounded-md text-sm font-medium transition-colors
-          {selectedSeason === season ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}"
-      >
-        {season}
-      </button>
-    {/each}
-  </div>
-
-  <!-- Batting / Pitching toggle -->
-  <div class="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit">
+<!-- Header + season tabs -->
+<div class="mb-5 flex flex-wrap items-center gap-2">
+  <h1 class="text-xl md:text-2xl font-bold mr-2">Players</h1>
+  {#each seasons as s}
     <button
-      type="button"
-      onclick={() => side = 'batting'}
-      class="px-4 py-1.5 rounded-md text-sm font-medium transition-colors
-        {side === 'batting' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}"
-    >
-      Batting
-    </button>
-    <button
-      type="button"
-      onclick={() => side = 'pitching'}
-      class="px-4 py-1.5 rounded-md text-sm font-medium transition-colors
-        {side === 'pitching' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}"
-    >
-      Pitching
-    </button>
-  </div>
-
-  {#if side === 'batting'}
-
-    <!-- Batting stat tabs -->
-    <div class="flex gap-1 flex-wrap">
-      {#each BATTING_STATS as stat}
-        <button
-          type="button"
-          onclick={() => battingStat = stat.key}
-          class="px-3 py-1 rounded-full text-xs font-medium border transition-colors
-            {battingStat === stat.key
-              ? 'bg-blue-600 border-blue-600 text-white'
-              : 'border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'}"
-        >
-          {stat.label}
-        </button>
-      {/each}
-    </div>
-
-    <!-- Batting leaderboard -->
-    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-      <div class="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
-        <span class="text-sm font-semibold text-white">
-          {activeBattingStat.label} Leaders
-          {activeBattingStat.minAB > 0 ? `(min ${activeBattingStat.minAB} AB)` : ''}
-        </span>
-        <span class="text-xs text-gray-500">{selectedSeason} WBC</span>
-      </div>
-
-      {#if battingLeaders().length === 0}
-        <p class="px-5 py-8 text-sm text-gray-500 text-center">No data for this selection.</p>
-      {:else}
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-800">
-              <th class="text-left px-5 py-2 font-medium w-8">#</th>
-              <th class="text-left px-3 py-2 font-medium">Player</th>
-              <th class="text-left px-3 py-2 font-medium hidden sm:table-cell">Country</th>
-              <th class="text-right px-3 py-2 font-medium">GP</th>
-              <th class="text-right px-3 py-2 font-medium">AB</th>
-              <th class="text-right px-3 py-2 font-medium">H</th>
-              <th class="text-right px-3 py-2 font-medium">HR</th>
-              <th class="text-right px-3 py-2 font-medium">RBI</th>
-              <th class="text-right px-5 py-2 font-medium text-blue-400">{activeBattingStat.label}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each battingLeaders() as player, i}
-              <tr class="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/40 transition-colors">
-                <td class="px-5 py-3 text-gray-500 tabular-nums text-xs">{i + 1}</td>
-                <td class="px-3 py-3">
-                  <a
-                    href="/players/{player.person_id}"
-                    class="font-medium text-white hover:text-blue-400 transition-colors"
-                  >
-                    {player.full_name}
-                  </a>
-                  <span class="text-xs text-gray-500 ml-1.5">{player.position_type ?? ''}</span>
-                </td>
-                <td class="px-3 py-3 hidden sm:table-cell">
-                  <div class="flex items-center gap-1.5">
-                    <span>{@html countryFlag(player.team_abbreviation)}</span>
-                    <span class="text-gray-400 text-xs">{player.team_abbreviation ?? '—'}</span>
-                  </div>
-                </td>
-                <td class="px-3 py-3 text-right text-gray-400 tabular-nums">{player.games_played ?? '—'}</td>
-                <td class="px-3 py-3 text-right text-gray-400 tabular-nums">{player.season_batting_ab ?? '—'}</td>
-                <td class="px-3 py-3 text-right text-gray-400 tabular-nums">{player.season_batting_h ?? '—'}</td>
-                <td class="px-3 py-3 text-right text-gray-400 tabular-nums">{player.season_batting_hr ?? '—'}</td>
-                <td class="px-3 py-3 text-right text-gray-400 tabular-nums">{player.season_batting_rbi ?? '—'}</td>
-                <td class="px-5 py-3 text-right font-bold tabular-nums text-white">
-                  {activeBattingStat.fmt(player[activeBattingStat.col])}
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      {/if}
-    </div>
-
-  {:else}
-
-    <!-- Pitching stat tabs -->
-    <div class="flex gap-1 flex-wrap">
-      {#each PITCHING_STATS as stat}
-        <button
-          type="button"
-          onclick={() => pitchingStat = stat.key}
-          class="px-3 py-1 rounded-full text-xs font-medium border transition-colors
-            {pitchingStat === stat.key
-              ? 'bg-blue-600 border-blue-600 text-white'
-              : 'border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'}"
-        >
-          {stat.label}
-        </button>
-      {/each}
-    </div>
-
-    <!-- Pitching leaderboard -->
-    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-      <div class="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
-        <span class="text-sm font-semibold text-white">
-          {activePitchingStat.label} Leaders
-          {activePitchingStat.minIP > 0 ? `(min ${activePitchingStat.minIP} IP)` : ''}
-        </span>
-        <span class="text-xs text-gray-500">{selectedSeason} WBC</span>
-      </div>
-
-      {#if pitchingLeaders().length === 0}
-        <p class="px-5 py-8 text-sm text-gray-500 text-center">No data for this selection.</p>
-      {:else}
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-800">
-              <th class="text-left px-5 py-2 font-medium w-8">#</th>
-              <th class="text-left px-3 py-2 font-medium">Player</th>
-              <th class="text-left px-3 py-2 font-medium hidden sm:table-cell">Country</th>
-              <th class="text-right px-3 py-2 font-medium">GP</th>
-              <th class="text-right px-3 py-2 font-medium">W</th>
-              <th class="text-right px-3 py-2 font-medium">L</th>
-              <th class="text-right px-3 py-2 font-medium">SV</th>
-              <th class="text-right px-3 py-2 font-medium">K</th>
-              <th class="text-right px-3 py-2 font-medium">IP</th>
-              <th class="text-right px-5 py-2 font-medium text-blue-400">{activePitchingStat.label}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each pitchingLeaders() as player, i}
-              <tr class="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/40 transition-colors">
-                <td class="px-5 py-3 text-gray-500 tabular-nums text-xs">{i + 1}</td>
-                <td class="px-3 py-3">
-                  <a
-                    href="/players/{player.person_id}"
-                    class="font-medium text-white hover:text-blue-400 transition-colors"
-                  >
-                    {player.full_name}
-                  </a>
-                </td>
-                <td class="px-3 py-3 hidden sm:table-cell">
-                  <div class="flex items-center gap-1.5">
-                    <span>{@html countryFlag(player.team_abbreviation)}</span>
-                    <span class="text-gray-400 text-xs">{player.team_abbreviation ?? '—'}</span>
-                  </div>
-                </td>
-                <td class="px-3 py-3 text-right text-gray-400 tabular-nums">{player.games_played ?? '—'}</td>
-                <td class="px-3 py-3 text-right text-gray-400 tabular-nums">{player.season_pitching_w ?? '—'}</td>
-                <td class="px-3 py-3 text-right text-gray-400 tabular-nums">{player.season_pitching_l ?? '—'}</td>
-                <td class="px-3 py-3 text-right text-gray-400 tabular-nums">{player.season_pitching_sv ?? '—'}</td>
-                <td class="px-3 py-3 text-right text-gray-400 tabular-nums">{player.season_pitching_so ?? '—'}</td>
-                <td class="px-3 py-3 text-right text-gray-400 tabular-nums">{fmtIp(player.season_pitching_ip)}</td>
-                <td class="px-5 py-3 text-right font-bold tabular-nums text-white">
-                  {activePitchingStat.fmt(player[activePitchingStat.col])}
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      {/if}
-    </div>
-
-  {/if}
-
+      onclick={() => { selectedSeason = s; }}
+      class="px-3 py-1 rounded-full text-xs font-semibold transition-colors {selectedSeason === s ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}"
+    >{s}</button>
+  {/each}
 </div>
+
+<!-- Batting / Pitching toggle -->
+<div class="flex gap-1 mb-5 bg-gray-800/50 rounded-lg p-1 w-fit">
+  {#each (['Batting', 'Pitching'] as Tab[]) as tab}
+    <button
+      onclick={() => activeTab = tab}
+      class="px-4 py-1.5 rounded-md text-sm font-medium transition-colors {activeTab === tab ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}"
+    >{tab}</button>
+  {/each}
+</div>
+
+<!-- Stat sort pills -->
+<div class="flex flex-wrap gap-2 mb-4">
+  {#if activeTab === 'Batting'}
+    {#each Object.entries(batStatLabels) as [key, label]}
+      <button
+        onclick={() => batSortKey = key as BatStat}
+        class="px-3 py-1 rounded-full text-xs font-semibold transition-colors {batSortKey === key ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}"
+      >{label}</button>
+    {/each}
+  {:else}
+    {#each Object.entries(pitStatLabels) as [key, label]}
+      <button
+        onclick={() => pitSortKey = key as PitStat}
+        class="px-3 py-1 rounded-full text-xs font-semibold transition-colors {pitSortKey === key ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}"
+      >{label}</button>
+    {/each}
+  {/if}
+</div>
+
+<!-- Leaderboard table — responsive wrapper -->
+<div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="text-xs text-gray-500 border-b border-gray-800 bg-gray-800/40">
+        {#if activeTab === 'Batting'}
+          <tr>
+            <th class="text-left px-4 py-3 font-medium w-8">#</th>
+            <th class="text-left px-2 py-3 font-medium">Player</th>
+            <th class="px-2 py-3 font-medium text-center hidden sm:table-cell">Team</th>
+            <th class="px-2 py-3 font-medium text-center hidden md:table-cell">G</th>
+            <th class="px-2 py-3 font-medium text-center hidden md:table-cell">AB</th>
+            <th class="px-2 py-3 font-medium text-center">AVG</th>
+            <th class="px-2 py-3 font-medium text-center hidden sm:table-cell">HR</th>
+            <th class="px-2 py-3 font-medium text-center hidden sm:table-cell">RBI</th>
+            <th class="px-2 py-3 font-medium text-center hidden lg:table-cell">OBP</th>
+            <th class="px-2 py-3 font-medium text-center hidden lg:table-cell">SLG</th>
+            <th class="px-2 py-3 font-medium text-center">OPS</th>
+            <th class="px-3 py-3 font-medium text-center hidden md:table-cell">SB</th>
+          </tr>
+        {:else}
+          <tr>
+            <th class="text-left px-4 py-3 font-medium w-8">#</th>
+            <th class="text-left px-2 py-3 font-medium">Player</th>
+            <th class="px-2 py-3 font-medium text-center hidden sm:table-cell">Team</th>
+            <th class="px-2 py-3 font-medium text-center hidden md:table-cell">G</th>
+            <th class="px-2 py-3 font-medium text-center">ERA</th>
+            <th class="px-2 py-3 font-medium text-center">IP</th>
+            <th class="px-2 py-3 font-medium text-center hidden sm:table-cell">K</th>
+            <th class="px-2 py-3 font-medium text-center hidden sm:table-cell">BB</th>
+            <th class="px-2 py-3 font-medium text-center hidden md:table-cell">W</th>
+            <th class="px-2 py-3 font-medium text-center hidden md:table-cell">L</th>
+            <th class="px-3 py-3 font-medium text-center hidden lg:table-cell">SV</th>
+          </tr>
+        {/if}
+      </thead>
+      <tbody>
+        {#each displayRows as row, i (row.person_id + '_' + row.season)}
+          <tr class="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/30 transition-colors">
+            {#if activeTab === 'Batting'}
+              <td class="px-4 py-2.5 text-gray-600 text-xs">{i + 1}</td>
+              <td class="px-2 py-2.5">
+                <a href="/players/{row.person_id}" class="font-medium text-white hover:text-blue-400 transition-colors">{row.full_name}</a>
+              </td>
+              <td class="px-2 py-2.5 text-center text-gray-400 hidden sm:table-cell">{row.team_abbreviation}</td>
+              <td class="px-2 py-2.5 text-center text-gray-400 hidden md:table-cell">{fmtNum(row.games_played)}</td>
+              <td class="px-2 py-2.5 text-center text-gray-400 hidden md:table-cell">{fmtNum(row.season_batting_ab)}</td>
+              <td class="px-2 py-2.5 text-center font-mono {batSortKey === 'season_batting_avg' ? 'text-blue-400 font-semibold' : 'text-gray-300'}">{fmtAvg(row.season_batting_avg)}</td>
+              <td class="px-2 py-2.5 text-center {batSortKey === 'season_batting_hr' ? 'text-blue-400 font-semibold' : 'text-gray-300'} hidden sm:table-cell">{fmtNum(row.season_batting_hr)}</td>
+              <td class="px-2 py-2.5 text-center {batSortKey === 'season_batting_rbi' ? 'text-blue-400 font-semibold' : 'text-gray-300'} hidden sm:table-cell">{fmtNum(row.season_batting_rbi)}</td>
+              <td class="px-2 py-2.5 text-center font-mono text-gray-400 hidden lg:table-cell">{fmtAvg(row.season_batting_obp)}</td>
+              <td class="px-2 py-2.5 text-center font-mono text-gray-400 hidden lg:table-cell">{fmtAvg(row.season_batting_slg)}</td>
+              <td class="px-2 py-2.5 text-center font-mono {batSortKey === 'season_batting_ops' ? 'text-blue-400 font-semibold' : 'text-gray-300'}">{fmtAvg(row.season_batting_ops)}</td>
+              <td class="px-3 py-2.5 text-center {batSortKey === 'season_batting_sb' ? 'text-blue-400 font-semibold' : 'text-gray-300'} hidden md:table-cell">{fmtNum(row.season_batting_sb)}</td>
+            {:else}
+              <td class="px-4 py-2.5 text-gray-600 text-xs">{i + 1}</td>
+              <td class="px-2 py-2.5">
+                <a href="/players/{row.person_id}" class="font-medium text-white hover:text-blue-400 transition-colors">{row.full_name}</a>
+              </td>
+              <td class="px-2 py-2.5 text-center text-gray-400 hidden sm:table-cell">{row.team_abbreviation}</td>
+              <td class="px-2 py-2.5 text-center text-gray-400 hidden md:table-cell">{fmtNum(row.games_played)}</td>
+              <td class="px-2 py-2.5 text-center font-mono {pitSortKey === 'season_pitching_era' ? 'text-blue-400 font-semibold' : 'text-gray-300'}">{fmtNum(row.season_pitching_era)}</td>
+              <td class="px-2 py-2.5 text-center font-mono {pitSortKey === 'season_pitching_ip' ? 'text-blue-400 font-semibold' : 'text-gray-300'}">{fmtIp(row.season_pitching_ip)}</td>
+              <td class="px-2 py-2.5 text-center {pitSortKey === 'season_pitching_so' ? 'text-blue-400 font-semibold' : 'text-gray-300'} hidden sm:table-cell">{fmtNum(row.season_pitching_so)}</td>
+              <td class="px-2 py-2.5 text-center text-gray-400 hidden sm:table-cell">{fmtNum(row.season_pitching_bb)}</td>
+              <td class="px-2 py-2.5 text-center {pitSortKey === 'season_pitching_w' ? 'text-blue-400 font-semibold' : 'text-gray-300'} hidden md:table-cell">{fmtNum(row.season_pitching_w)}</td>
+              <td class="px-2 py-2.5 text-center text-gray-400 hidden md:table-cell">{fmtNum(row.season_pitching_l)}</td>
+              <td class="px-3 py-2.5 text-center {pitSortKey === 'season_pitching_sv' ? 'text-blue-400 font-semibold' : 'text-gray-300'} hidden lg:table-cell">{fmtNum(row.season_pitching_sv)}</td>
+            {/if}
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Count -->
+<p class="text-xs text-gray-600 mt-2">Showing {Math.min(visibleCount, totalRows)} of {totalRows} players</p>
+
+<!-- Infinite scroll sentinel -->
+{#if visibleCount < totalRows}
+  <div bind:this={sentinelRef} class="mt-4 flex justify-center">
+    <div class="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+  </div>
+{/if}

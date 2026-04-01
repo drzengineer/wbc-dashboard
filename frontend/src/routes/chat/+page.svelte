@@ -64,7 +64,7 @@
   // Suggestions
   const suggestions = [
     'Who won the 2023 WBC?',
-    'Who had the lowest ERA in 2023?',
+    'How did Ohtani do in 2026?',
     'Which team had the best pool play record?',
     'Who hit the most home runs?',
   ];
@@ -85,6 +85,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
           {#each suggestions as s}
             <button
+            type="button"
               onclick={() => { question = s; handleSubmit(); }}
               class="text-left px-4 py-3 bg-gray-800/60 border border-gray-700 rounded-xl text-sm text-gray-300 hover:border-blue-500/50 hover:text-white transition-colors"
             >{s}</button>
@@ -124,9 +125,9 @@
       disabled={loading}
       class="w-full bg-transparent px-4 pt-3 pb-1 text-sm text-white placeholder-gray-500 resize-none focus:outline-none disabled:opacity-50"
     ></textarea>
-    <div class="flex items-center justify-between px-3 pb-2">
-      <span class="text-xs text-gray-600">Enter to send · Shift+Enter for new line</span>
+    <div class="flex items-center justify-end px-3 pb-2">
       <button
+      type="button"
         onclick={handleSubmit}
         disabled={loading || !question.trim()}
         class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 rounded-lg text-xs font-semibold transition-colors"

@@ -23,16 +23,17 @@
     <span class="text-lg font-bold tracking-tight text-blue-400"> Dashboard</span>
   </div>
   <button
+  type="button"
     onclick={() => mobileNavOpen = !mobileNavOpen}
     class="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
     aria-label="Toggle menu"
   >
     {#if mobileNavOpen}
-      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      <svg class="w-5 h-5" fill="none" aria-hidden="true" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M67 18L18 6M6 6l12 12"/>
       </svg>
     {:else}
-      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg class="w-5 h-5" fill="none" aria-hidden="true" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
       </svg>
     {/if}

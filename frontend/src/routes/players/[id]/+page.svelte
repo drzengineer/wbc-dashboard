@@ -60,7 +60,7 @@
     const totalEarnedRuns = allSeasons.reduce((s: number, r: any) => {
       const era = Number(r.season_pitching_era);
       const ip  = Number(r.season_pitching_ip);
-      return s + (isNaN(era) || isNaN(ip) ? 0 : (era * ip) / 9);
+      return s + (Number.isNaN(era) || Number.isNaN(ip) ? 0 : (era * ip) / 9);
     }, 0);
     const totalIp = allSeasons.reduce((s: number, r: any) => s + Number(r.season_pitching_ip ?? 0), 0);
     const careerEra = totalIp > 0 ? ((totalEarnedRuns / totalIp) * 9).toFixed(2) : '—';
@@ -114,7 +114,7 @@
 <!-- Back link -->
 <div class="mb-4">
   <a href="/players" class="text-sm text-gray-500 hover:text-blue-400 transition-colors flex items-center gap-1">
-    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg class="w-4 h-4" fill="none" aria-hidden="true" viewBox="0 0 24 24" stroke="currentColor">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
     </svg>
     Players
@@ -275,6 +275,7 @@
     <div class="flex gap-1">
       {#each seasons as s}
         <button
+        type="button"
           onclick={() => selectedSeason = s}
           class="px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors {selectedSeason === s ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}"
         >{s}</button>

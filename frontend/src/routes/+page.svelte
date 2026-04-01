@@ -1,7 +1,7 @@
 <!-- src/routes/+page.svelte -->
 <script lang="ts">
-  import type { PageData } from './$types';
   import { flagHtml } from '$lib/flags';
+  import type { PageData } from './$types';
 
   const { data }: { data: PageData } = $props();
 

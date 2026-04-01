@@ -29,12 +29,12 @@ type VectorRow = {
 };
 
 async function retrieveContext(embedding: number[], question: string): Promise<string> {
-	console.log(`[RAG] Querying pgvector — match_count=12, match_threshold=0.2`);
+	console.log(`[RAG] Querying pgvector — match_count=40, match_threshold=0.4`);
 
 	const { data, error } = await supabase.schema("vectors").rpc("match_embeddings", {
 		query_embedding: embedding,
-		match_count: 20,
-		match_threshold: 0.5,
+		match_count: 40,
+		match_threshold: 0.4,
 	});
 
 	if (error) throw new Error(`pgvector error: ${error.message}`);

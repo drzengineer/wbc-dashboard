@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { flagHtml } from '$lib/flags';
 
   const { data } = $props();
 
@@ -36,7 +37,7 @@
 
   const visibleLogs = $derived(seasonLogs.slice(0, visibleLogCount));
 
-  // ─── Career totals (multi-season batters/pitchers) ────────────────────────────
+  // ─── Career totals (multi-season only) ───────────────────────────────────────
   const hasMultipleSeasons = $derived(allSeasons.length > 1);
 
   const careerBatting = $derived(() => {
@@ -91,8 +92,8 @@
   function gameResult(log: any) {
     const gr = log._gr;
     if (!gr || gr.away_score == null) return '—';
-    const myAbbr = log.team_abbreviation;
-    const iAway  = gr.away_team_abbreviation === myAbbr;
+    const myAbbr   = log.team_abbreviation;
+    const iAway    = gr.away_team_abbreviation === myAbbr;
     const myScore  = iAway ? gr.away_score : gr.home_score;
     const oppScore = iAway ? gr.home_score  : gr.away_score;
     const oppAbbr  = iAway ? gr.home_team_abbreviation : gr.away_team_abbreviation;
@@ -102,8 +103,8 @@
   function resultColor(log: any) {
     const gr = log._gr;
     if (!gr || gr.away_score == null) return 'text-gray-500';
-    const myAbbr = log.team_abbreviation;
-    const iAway  = gr.away_team_abbreviation === myAbbr;
+    const myAbbr   = log.team_abbreviation;
+    const iAway    = gr.away_team_abbreviation === myAbbr;
     const myScore  = iAway ? gr.away_score : gr.home_score;
     const oppScore = iAway ? gr.home_score  : gr.away_score;
     return myScore > oppScore ? 'text-green-500' : myScore < oppScore ? 'text-red-500' : 'text-gray-400';
@@ -124,7 +125,11 @@
 <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 md:p-6 mb-6">
   <div class="flex flex-col sm:flex-row sm:items-start gap-4">
     <div class="flex-1 min-w-0">
-      <h1 class="text-xl md:text-2xl font-bold text-white truncate">{player?.full_name}</h1>
+      <!-- Name + flag on same line -->
+      <div class="flex items-center gap-3 flex-wrap">
+        <h1 class="text-xl md:text-2xl font-bold text-white">{player?.full_name}</h1>
+        <span class="inline-block shrink-0">{@html flagHtml(player?.team_abbreviation, player?.represented_country)}</span>
+      </div>
       <div class="flex flex-wrap items-center gap-2 mt-1">
         <span class="text-sm text-gray-400">{player?.represented_country}</span>
         <span class="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-700/40">{player?.position_abbreviation}</span>
@@ -191,6 +196,9 @@
           {#if !isPitcher}
             <tr>
               <th class="text-left px-4 py-2.5 font-medium">Year</th>
+              <!-- Flag column -->
+              <th class="w-8 py-2.5"></th>
+              <th class="px-2 py-2.5 font-medium text-center hidden sm:table-cell">Team</th>
               <th class="px-2 py-2.5 font-medium text-center">G</th>
               <th class="px-2 py-2.5 font-medium text-center">AB</th>
               <th class="px-2 py-2.5 font-medium text-center">AVG</th>
@@ -203,6 +211,9 @@
           {:else}
             <tr>
               <th class="text-left px-4 py-2.5 font-medium">Year</th>
+              <!-- Flag column -->
+              <th class="w-8 py-2.5"></th>
+              <th class="px-2 py-2.5 font-medium text-center hidden sm:table-cell">Team</th>
               <th class="px-2 py-2.5 font-medium text-center">G</th>
               <th class="px-2 py-2.5 font-medium text-center">ERA</th>
               <th class="px-2 py-2.5 font-medium text-center">IP</th>
@@ -222,6 +233,10 @@
             >
               {#if !isPitcher}
                 <td class="px-4 py-2.5 font-medium {row.season === selectedSeason ? 'text-blue-400' : ''}">{row.season}</td>
+                <td class="w-8 py-2.5 pr-1">
+                  <span class="inline-block">{@html flagHtml(row.team_abbreviation)}</span>
+                </td>
+                <td class="px-2 py-2.5 text-center text-gray-400 hidden sm:table-cell">{row.team_abbreviation}</td>
                 <td class="px-2 py-2.5 text-center text-gray-400">{fmtNum(row.games_played)}</td>
                 <td class="px-2 py-2.5 text-center text-gray-400">{fmtNum(row.season_batting_ab)}</td>
                 <td class="px-2 py-2.5 text-center font-mono text-gray-200">{fmtAvg(row.season_batting_avg)}</td>
@@ -232,6 +247,10 @@
                 <td class="px-3 py-2.5 text-center font-mono text-gray-200">{fmtAvg(row.season_batting_ops)}</td>
               {:else}
                 <td class="px-4 py-2.5 font-medium {row.season === selectedSeason ? 'text-blue-400' : ''}">{row.season}</td>
+                <td class="w-8 py-2.5 pr-1">
+                  <span class="inline-block">{@html flagHtml(row.team_abbreviation)}</span>
+                </td>
+                <td class="px-2 py-2.5 text-center text-gray-400 hidden sm:table-cell">{row.team_abbreviation}</td>
                 <td class="px-2 py-2.5 text-center text-gray-400">{fmtNum(row.games_played)}</td>
                 <td class="px-2 py-2.5 text-center font-mono text-gray-200">{fmtNum(row.season_pitching_era)}</td>
                 <td class="px-2 py-2.5 text-center font-mono text-gray-300">{fmtIp(row.season_pitching_ip)}</td>
@@ -316,7 +335,10 @@
                 <td class="px-2 py-2 text-center text-gray-400 hidden sm:table-cell">{fmtNum(log.pitching_bb)}</td>
                 <td class="px-2 py-2 text-center text-gray-400 hidden md:table-cell">{fmtNum(log.pitching_h)}</td>
                 <td class="px-3 py-2 text-center text-xs hidden md:table-cell">
-                  {#if log.pitching_w}<span class="text-green-500">W</span>{:else if log.pitching_l}<span class="text-red-500">L</span>{:else if log.pitching_sv}<span class="text-blue-400">SV</span>{:else}<span class="text-gray-600">—</span>{/if}
+                  {#if log.pitching_w}<span class="text-green-500">W</span>
+                  {:else if log.pitching_l}<span class="text-red-500">L</span>
+                  {:else if log.pitching_sv}<span class="text-blue-400">SV</span>
+                  {:else}<span class="text-gray-600">—</span>{/if}
                 </td>
               {/if}
             </tr>
@@ -330,7 +352,6 @@
     <p class="text-gray-500 text-sm mt-3">No game log data for {selectedSeason}.</p>
   {/if}
 
-  <!-- Infinite scroll sentinel -->
   {#if visibleLogCount < seasonLogs.length}
     <div bind:this={logSentinelRef} class="mt-4 flex justify-center">
       <div class="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>

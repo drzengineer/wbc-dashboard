@@ -1,84 +1,9 @@
 <!-- src/routes/+page.svelte -->
 <script lang="ts">
   import type { PageData } from './$types';
+  import { flagHtml } from '$lib/flags';
 
   const { data }: { data: PageData } = $props();
-
-  // ── Flag images (reliable across all browsers) ────────────
-  const FLAG_IMAGES: Record<string, string> = {
-    // USA
-    'USA': 'https://flagcdn.com/us.svg',
-    // Dominican Republic
-    'DOM': 'https://flagcdn.com/do.svg',
-    // Puerto Rico
-    'PUR': 'https://flagcdn.com/pr.svg',
-    // Japan
-    'JPN': 'https://flagcdn.com/jp.svg',
-    // Cuba
-    'CUB': 'https://flagcdn.com/cu.svg',
-    // Venezuela
-    'VEN': 'https://flagcdn.com/ve.svg',
-    // Mexico
-    'MEX': 'https://flagcdn.com/mx.svg',
-    // South Korea
-    'KOR': 'https://flagcdn.com/kr.svg',
-    // Netherlands
-    'NED': 'https://flagcdn.com/nl.svg',
-    // Italy
-    'ITA': 'https://flagcdn.com/it.svg',
-    // Australia
-    'AUS': 'https://flagcdn.com/au.svg',
-    // Canada
-    'CAN': 'https://flagcdn.com/ca.svg',
-    // Panama
-    'PAN': 'https://flagcdn.com/pa.svg',
-    // Chinese Taipei / Taiwan
-    'TPE': 'https://flagcdn.com/tw.svg',
-    // China
-    'CHN': 'https://flagcdn.com/cn.svg',
-    // Nicaragua
-    'NCA': 'https://flagcdn.com/ni.svg',
-    // Colombia
-    'COL': 'https://flagcdn.com/co.svg',
-    // Israel
-    'ISR': 'https://flagcdn.com/il.svg',
-    // Great Britain / UK
-    'GBR': 'https://flagcdn.com/gb.svg',
-    // Czech Republic
-    'CZE': 'https://flagcdn.com/cz.svg',
-    // Spain
-    'ESP': 'https://flagcdn.com/es.svg',
-    // South Africa
-    'RSA': 'https://flagcdn.com/za.svg',
-    // New Zealand
-    'NZL': 'https://flagcdn.com/nz.svg',
-    // Brazil
-    'BRA': 'https://flagcdn.com/br.svg',
-    // France
-    'FRA': 'https://flagcdn.com/fr.svg',
-    // Germany
-    'GER': 'https://flagcdn.com/de.svg',
-    // Austria
-    'AUT': 'https://flagcdn.com/at.svg',
-    // Philippines
-    'PHI': 'https://flagcdn.com/ph.svg',
-    // Pakistan
-    'PAK': 'https://flagcdn.com/pk.svg',
-    // Uganda
-    'UGA': 'https://flagcdn.com/ug.svg',
-    // Argentina
-    'ARG': 'https://flagcdn.com/ar.svg',
-  };
-
-  function flag(abbr?: string, name?: string): string {
-    if (abbr && FLAG_IMAGES[abbr]) {
-      return `<img src="${FLAG_IMAGES[abbr]}" alt="${abbr}" >`;
-    }
-    if (name && FLAG_IMAGES[name]) {
-      return `<img src="${FLAG_IMAGES[name]}" alt="${name}">`;
-    }
-    return '<span class="w-[24px] h-[16px] inline-block bg-gray-700 rounded"></span>';
-  }
 
   const seasons = $derived(
     [...new Set((data.standings as any[]).map((s) => s.season))]
@@ -171,11 +96,12 @@
   <div>
     <h1 class="text-2xl font-bold text-white tracking-tight">Dashboard</h1>
   </div>
+
   <!-- Season tabs -->
   <div class="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit">
     {#each seasons as season}
       <button
-      type="button"
+        type="button"
         onclick={() => selectedSeason = season}
         class="px-3 py-1 rounded-md text-sm font-medium transition-colors
           {selectedSeason === season ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}"
@@ -207,7 +133,7 @@
                 {i > 0 ? 'border-t border-gray-800/50' : ''}
                 {row.isWinner ? 'bg-yellow-500/10' : ''}">
                 <div class="flex items-center gap-2 min-w-0">
-                  <span class="inline-block w-8">{@html flag(row.abbr, row.name)}</span>
+                  <span class="inline-block w-8 shrink-0">{@html flagHtml(row.abbr, row.name)}</span>
                   <span class="text-base font-semibold {row.isWinner ? 'text-yellow-400' : 'text-gray-400'}">
                     {#if row.isWinner}🏆 {/if}{row.abbr ?? row.name}
                   </span>
@@ -250,7 +176,7 @@
                     {i > 0 ? 'border-t border-gray-800/50' : ''}
                     {row.isWinner ? 'bg-gray-800/60' : ''}">
                     <div class="flex items-center gap-1.5 min-w-0">
-                      <span class="inline-block w-7">{@html flag(row.abbr, row.name)}</span>
+                      <span class="inline-block w-7 shrink-0">{@html flagHtml(row.abbr, row.name)}</span>
                       <span class="text-sm font-medium {row.isWinner ? 'text-white' : 'text-gray-500'} truncate">
                         {row.abbr ?? row.name}
                       </span>
@@ -294,7 +220,7 @@
                       {i > 0 ? 'border-t border-gray-800/50' : ''}
                       {row.isWinner ? 'bg-gray-800/60' : ''}">
                       <div class="flex items-center gap-1.5 min-w-0">
-                        <span class="inline-block w-6">{@html flag(row.abbr, row.name)}</span>
+                        <span class="inline-block w-6 shrink-0">{@html flagHtml(row.abbr, row.name)}</span>
                         <span class="text-sm font-medium {row.isWinner ? 'text-white' : 'text-gray-500'} truncate">
                           {row.abbr ?? row.name}
                         </span>
@@ -330,57 +256,70 @@
         <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
           <div class="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
             <span class="text-sm font-semibold text-white">{poolName}</span>
-            {#if teams.some((t: any) => t.is_champion)}
-              <span class="text-xs bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded px-1.5 py-0.5">Champion</span>
-            {/if}
           </div>
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-800">
-                <th class="text-left px-4 py-2 font-medium">Team</th>
-                <th class="text-center px-3 py-2 font-medium">GP</th>
-                <th class="text-center px-3 py-2 font-medium">W</th>
-                <th class="text-center px-3 py-2 font-medium">L</th>
-                <th class="text-center px-3 py-2 font-medium">PCT</th>
-                <th class="text-center px-3 py-2 font-medium">RS</th>
-                <th class="text-center px-3 py-2 font-medium">RA</th>
-                <th class="text-center px-3 py-2 font-medium">DIFF</th>
-              </tr>
-            </thead>
-            <tbody>
-              {#each teams as team, i}
-                <tr class="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/40 transition-colors
-                  {team.is_champion ? 'bg-yellow-500/5' : ''}">
-                  <td class="px-4 py-2.5 font-medium text-white">
-                    <div class="flex items-center gap-2">
-                      {#if team.is_champion}
-                        <span class="w-4 text-yellow-400">🏆</span>
-                      {:else if i === 0}
-                        <span class="w-4 text-center text-green-400 text-xs">●</span>
-                      {:else if i === 1}
-                        <span class="w-4 text-center text-green-400/50 text-xs">●</span>
-                      {:else}
-                        <span class="w-4"></span>
-                      {/if}
-                      <span class="inline-block w-6 shrink-0">{@html flag(team.team_abbreviation, team.team_name)}</span>
-                      <span>{team.team_abbreviation ?? team.team_name}</span>
-                      <span class="text-gray-500 text-xs hidden sm:inline">{team.team_name}</span>
-                    </div>
-                  </td>
-                  <td class="px-3 py-2.5 text-center text-gray-300">{team.pool_gp ?? '—'}</td>
-                  <td class="px-3 py-2.5 text-center text-gray-300">{team.pool_wins ?? '—'}</td>
-                  <td class="px-3 py-2.5 text-center text-gray-300">{team.pool_losses ?? '—'}</td>
-                  <td class="px-3 py-2.5 text-center font-mono text-gray-200">{pct(team.pool_win_pct)}</td>
-                  <td class="px-3 py-2.5 text-center text-gray-400">{team.pool_runs_scored ?? '—'}</td>
-                  <td class="px-3 py-2.5 text-center text-gray-400">{team.pool_runs_allowed ?? '—'}</td>
-                  <td class="px-3 py-2.5 text-center font-mono
-                    {Number(team.pool_run_differential) > 0 ? 'text-green-400' : Number(team.pool_run_differential) < 0 ? 'text-red-400' : 'text-gray-400'}">
-                    {Number(team.pool_run_differential) > 0 ? '+' : ''}{team.pool_run_differential ?? '—'}
-                  </td>
+          <!-- overflow-x-auto lets the table scroll on narrow screens instead of squishing -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-800">
+                  <!-- indicator dot: fixed narrow column -->
+                  <th class="w-5 pl-4 py-2"></th>
+                  <!-- flag: fixed width -->
+                  <th class="w-7 py-2"></th>
+                  <!-- abbr: fixed, never wraps -->
+                  <th class="w-10 py-2 text-left font-medium text-gray-500"></th>
+                  <!-- full name: takes remaining space, hidden on small screens -->
+                  <th class="py-2 text-left font-medium hidden sm:table-cell pr-3">Team</th>
+                  <!-- stat columns: all fixed equal width, right-aligned, tabular-nums -->
+                  <th class="w-10 py-2 text-center font-medium">GP</th>
+                  <th class="w-10 py-2 text-center font-medium">W</th>
+                  <th class="w-10 py-2 text-center font-medium">L</th>
+                  <th class="w-14 py-2 text-center font-medium">PCT</th>
+                  <th class="w-10 py-2 text-center font-medium">RS</th>
+                  <th class="w-10 py-2 text-center font-medium">RA</th>
+                  <th class="w-14 pr-4 py-2 text-center font-medium">DIFF</th>
                 </tr>
-              {/each}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {#each teams as team, i}
+                  <tr class="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/40 transition-colors
+                    {team.is_champion ? 'bg-yellow-500/5' : ''}">
+                    <!-- Indicator dot — fixed w-5 -->
+                    <td class="w-5 p-4 py-2.5">
+                      {#if i === 0}
+                        <span class="text-green-400 text-xs leading-none">●</span>
+                      {:else if i === 1}
+                        <span class="text-green-400/50 text-xs leading-none">●</span>
+                      {/if}
+                    </td>
+                    <!-- Flag — fixed w-7 -->
+                    <td class="w-9 py-2.5">
+                      <span class="inline-block w-6 shrink-0">{@html flagHtml(team.team_abbreviation, team.team_name)}</span>
+                    </td>
+                    <!-- Abbreviation — fixed w-10, never wraps -->
+                    <td class="w-10 py-2.5 font-semibold text-white whitespace-nowrap">
+                      {team.team_abbreviation ?? '—'}
+                    </td>
+                    <!-- Full name — flexible, hidden on small screens -->
+                    <td class="py-2.5 text-gray-500 text-xs whitespace-nowrap pr-3 hidden sm:table-cell">
+                      {team.team_name ?? ''}
+                    </td>
+                    <!-- Stat columns — all fixed width, tabular-nums -->
+                    <td class="w-10 py-2.5 text-center tabular-nums text-gray-300">{team.pool_gp ?? '—'}</td>
+                    <td class="w-10 py-2.5 text-center tabular-nums text-gray-300">{team.pool_wins ?? '—'}</td>
+                    <td class="w-10 py-2.5 text-center tabular-nums text-gray-300">{team.pool_losses ?? '—'}</td>
+                    <td class="w-14 py-2.5 text-center tabular-nums font-mono text-gray-200">{pct(team.pool_win_pct)}</td>
+                    <td class="w-10 py-2.5 text-center tabular-nums text-gray-400">{team.pool_runs_scored ?? '—'}</td>
+                    <td class="w-10 py-2.5 text-center tabular-nums text-gray-400">{team.pool_runs_allowed ?? '—'}</td>
+                    <td class="w-14 pr-4 py-2.5 text-center tabular-nums font-mono
+                      {Number(team.pool_run_differential) > 0 ? 'text-green-400' : Number(team.pool_run_differential) < 0 ? 'text-red-400' : 'text-gray-400'}">
+                      {Number(team.pool_run_differential) > 0 ? '+' : ''}{team.pool_run_differential ?? '—'}
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
         </div>
       {/each}
     </div>
@@ -398,7 +337,7 @@
             <div class="flex items-center justify-between gap-4 flex-wrap">
               <div class="flex items-center gap-3">
                 <div class="flex items-center gap-2">
-                  <span class="inline-block w-6">{@html flag((game as any).away_team_abbreviation, (game as any).away_team_name)}</span>
+                  <span class="inline-block w-6 shrink-0">{@html flagHtml((game as any).away_team_abbreviation, (game as any).away_team_name)}</span>
                   <span class="font-semibold text-white text-sm w-10 text-right shrink-0">
                     {(game as any).away_team_abbreviation ?? (game as any).away_team_name}
                   </span>
@@ -414,7 +353,7 @@
                   <span class="font-semibold text-white text-sm w-10 shrink-0">
                     {(game as any).home_team_abbreviation ?? (game as any).home_team_name}
                   </span>
-                  <span class="inline-block w-6">{@html flag((game as any).home_team_abbreviation, (game as any).home_team_name)}</span>
+                  <span class="inline-block w-6 shrink-0">{@html flagHtml((game as any).home_team_abbreviation, (game as any).home_team_name)}</span>
                 </div>
                 {#if (game as any).is_mercy_rule}
                   <span class="text-xs bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded px-1.5 py-0.5 shrink-0">Mercy</span>

@@ -1,49 +1,9 @@
 <!-- src/routes/games/+page.svelte -->
 <script lang="ts">
   import type { PageData } from './$types';
+  import { flagHtml } from '$lib/flags';
 
   const { data }: { data: PageData } = $props();
-
-  // ── Flag images ──────────────────────────────────────────────
-  const FLAG_IMAGES: Record<string, string> = {
-    'USA': 'https://flagcdn.com/us.svg',
-    'DOM': 'https://flagcdn.com/do.svg',
-    'PUR': 'https://flagcdn.com/pr.svg',
-    'JPN': 'https://flagcdn.com/jp.svg',
-    'CUB': 'https://flagcdn.com/cu.svg',
-    'VEN': 'https://flagcdn.com/ve.svg',
-    'MEX': 'https://flagcdn.com/mx.svg',
-    'KOR': 'https://flagcdn.com/kr.svg',
-    'NED': 'https://flagcdn.com/nl.svg',
-    'ITA': 'https://flagcdn.com/it.svg',
-    'AUS': 'https://flagcdn.com/au.svg',
-    'CAN': 'https://flagcdn.com/ca.svg',
-    'PAN': 'https://flagcdn.com/pa.svg',
-    'TPE': 'https://flagcdn.com/tw.svg',
-    'CHN': 'https://flagcdn.com/cn.svg',
-    'NCA': 'https://flagcdn.com/ni.svg',
-    'COL': 'https://flagcdn.com/co.svg',
-    'ISR': 'https://flagcdn.com/il.svg',
-    'GBR': 'https://flagcdn.com/gb.svg',
-    'CZE': 'https://flagcdn.com/cz.svg',
-    'ESP': 'https://flagcdn.com/es.svg',
-    'RSA': 'https://flagcdn.com/za.svg',
-    'NZL': 'https://flagcdn.com/nz.svg',
-    'BRA': 'https://flagcdn.com/br.svg',
-    'FRA': 'https://flagcdn.com/fr.svg',
-    'GER': 'https://flagcdn.com/de.svg',
-    'AUT': 'https://flagcdn.com/at.svg',
-    'PHI': 'https://flagcdn.com/ph.svg',
-    'PAK': 'https://flagcdn.com/pk.svg',
-    'UGA': 'https://flagcdn.com/ug.svg',
-    'ARG': 'https://flagcdn.com/ar.svg',
-  };
-
-  function flag(abbr?: string, name?: string): string {
-    if (abbr && FLAG_IMAGES[abbr]) return `<img src="${FLAG_IMAGES[abbr]}" alt="${abbr}">`;
-    if (name && FLAG_IMAGES[name]) return `<img src="${FLAG_IMAGES[name]}" alt="${name}">`;
-    return '<span class="w-[24px] h-[16px] inline-block bg-gray-700 rounded"></span>';
-  }
 
   // ── All games ────────────────────────────────────────────────
   const allGames = data.games as any[];
@@ -244,7 +204,7 @@
 
               <!-- Away team -->
               <div class="flex items-center gap-2">
-                <span class="inline-block w-6 shrink-0">{@html flag(game.away_team_abbreviation, game.away_team_name)}</span>
+                <span class="inline-block w-6 shrink-0">{@html flagHtml(game.away_team_abbreviation, game.away_team_name)}</span>
                 <span class="text-sm font-semibold w-9 text-right shrink-0
                   {awayWon ? 'text-white' : 'text-gray-500'}">
                   {game.away_team_abbreviation ?? game.away_team_name ?? '—'}
@@ -267,7 +227,7 @@
                   {homeWon ? 'text-white' : 'text-gray-500'}">
                   {game.home_team_abbreviation ?? game.home_team_name ?? '—'}
                 </span>
-                <span class="inline-block w-6 shrink-0">{@html flag(game.home_team_abbreviation, game.home_team_name)}</span>
+                <span class="inline-block w-6 shrink-0">{@html flagHtml(game.home_team_abbreviation, game.home_team_name)}</span>
               </div>
 
               <!-- Badges -->

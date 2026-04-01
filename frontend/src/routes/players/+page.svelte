@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { flagHtml } from '$lib/flags';
 
   const { data } = $props();
 
@@ -123,7 +124,7 @@
   {/if}
 </div>
 
-<!-- Leaderboard table — responsive wrapper -->
+<!-- Leaderboard table -->
 <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
   <div class="overflow-x-auto">
     <table class="w-full text-sm">
@@ -132,6 +133,8 @@
           <tr>
             <th class="text-left px-4 py-3 font-medium w-8">#</th>
             <th class="text-left px-2 py-3 font-medium">Player</th>
+            <!-- Flag column: fixed narrow, no header text -->
+            <th class="w-8 py-3"></th>
             <th class="px-2 py-3 font-medium text-center hidden sm:table-cell">Team</th>
             <th class="px-2 py-3 font-medium text-center hidden md:table-cell">G</th>
             <th class="px-2 py-3 font-medium text-center hidden md:table-cell">AB</th>
@@ -147,6 +150,8 @@
           <tr>
             <th class="text-left px-4 py-3 font-medium w-8">#</th>
             <th class="text-left px-2 py-3 font-medium">Player</th>
+            <!-- Flag column: fixed narrow, no header text -->
+            <th class="w-8 py-3"></th>
             <th class="px-2 py-3 font-medium text-center hidden sm:table-cell">Team</th>
             <th class="px-2 py-3 font-medium text-center hidden md:table-cell">G</th>
             <th class="px-2 py-3 font-medium text-center">ERA</th>
@@ -167,6 +172,10 @@
               <td class="px-2 py-2.5">
                 <a href="/players/{row.person_id}" class="font-medium text-white hover:text-blue-400 transition-colors">{row.full_name}</a>
               </td>
+              <!-- Flag -->
+              <td class="w-8 py-2.5 pr-1">
+                <span class="inline-block">{@html flagHtml(row.team_abbreviation)}</span>
+              </td>
               <td class="px-2 py-2.5 text-center text-gray-400 hidden sm:table-cell">{row.team_abbreviation}</td>
               <td class="px-2 py-2.5 text-center text-gray-400 hidden md:table-cell">{fmtNum(row.games_played)}</td>
               <td class="px-2 py-2.5 text-center text-gray-400 hidden md:table-cell">{fmtNum(row.season_batting_ab)}</td>
@@ -181,6 +190,10 @@
               <td class="px-4 py-2.5 text-gray-600 text-xs">{i + 1}</td>
               <td class="px-2 py-2.5">
                 <a href="/players/{row.person_id}" class="font-medium text-white hover:text-blue-400 transition-colors">{row.full_name}</a>
+              </td>
+              <!-- Flag -->
+              <td class="w-8 py-2.5 pr-1">
+                <span class="inline-block">{@html flagHtml(row.team_abbreviation)}</span>
               </td>
               <td class="px-2 py-2.5 text-center text-gray-400 hidden sm:table-cell">{row.team_abbreviation}</td>
               <td class="px-2 py-2.5 text-center text-gray-400 hidden md:table-cell">{fmtNum(row.games_played)}</td>

@@ -17,7 +17,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
     supabase
       .from('player_game_stats')
-      .select('game_pk,season,official_date,team_abbreviation,team_side,represented_country,position_abbreviation,position_type,batting_order,is_on_bench,is_substitute,batting_ab,batting_h,batting_2b,batting_3b,batting_hr,batting_rbi,batting_r,batting_bb,batting_so,batting_sb,batting_avg,pitching_ip,pitching_er,pitching_r,pitching_so,pitching_bb,pitching_h,pitching_hr,pitching_bf,pitching_w,pitching_l,pitching_sv,pitching_era')
+      .select('*')
       .eq('person_id', personId)
       .order('season', { ascending: false })
       .order('official_date', { ascending: true }),
@@ -33,7 +33,7 @@ export const load: PageServerLoad = async ({ params }) => {
   if (gamePks.length > 0) {
     const { data } = await supabase
       .from('game_results')
-      .select('game_pk,away_team_abbreviation,home_team_abbreviation,away_score,home_score,round_label,pool_display')
+      .select('*')
       .in('game_pk', gamePks);
     gameResults = data ?? [];
   }

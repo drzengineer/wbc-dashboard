@@ -28,7 +28,10 @@
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: q }),
+      body: JSON.stringify({
+        question: q,
+        messages: messages.slice(0, -1),
+      }),
     });
 
     if (!res.ok || !res.body) {

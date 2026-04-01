@@ -14,3 +14,6 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.test
+
+# context doc for AI
+wbc_master_reference.md

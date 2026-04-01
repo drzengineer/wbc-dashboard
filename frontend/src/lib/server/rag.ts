@@ -67,14 +67,61 @@ async function retrieveContext(embedding: number[], question: string): Promise<s
 	return context;
 }
 
+type HistoryMessage = { role: 'user' | 'assistant'; content: string };
+
+// ── Question rewriting ────────────────────────────────────────────────────────
+
+async function rewriteQuestion(question: string, history: HistoryMessage[]): Promise<string> {
+	if (history.length === 0) return question;
+
+	console.log(`[RAG] Rewriting question with ${history.length} history messages...`);
+
+	const completion = await groq.chat.completions.create({
+		model: "llama-3.3-70b-versatile",
+		max_tokens: 128,
+		temperature: 0,
+		messages: [
+			{
+				role: "system",
+				content: `You are a question rewriter. Your ONLY job is to rewrite the user's question into a standalone question using context from the conversation history.
+
+CRITICAL RULES:
+- DO NOT answer the question. Only rewrite it.
+- DO NOT add facts, statistics, names, or information not explicitly mentioned in the conversation history.
+- ONLY add context that was directly stated in prior messages (player names, years, teams).
+- The output must be a QUESTION, not a statement or answer.
+- If the question is already standalone, return it unchanged.
+
+Examples:
+- "who won each year?" → "Which team won the World Baseball Classic in each year?"
+- "how many rbi's did he get?" (history mentions Ohtani) → "How many RBI's did Ohtani get?"
+- "what about 2023?" (history about 2026 results) → "What were the results for the 2023 World Baseball Classic?"
+- "how did they do?" (history about Japan) → "How did Japan do?"
+
+Output ONLY the rewritten question.`,
+			},
+			...history.slice(-6),
+			{ role: "user", content: question },
+		],
+	});
+
+	const rewritten = completion.choices[0]?.message?.content?.trim() || question;
+	console.log(`[RAG] Rewritten: "${question}" → "${rewritten}"`);
+	return rewritten;
+}
+
 // ── RAG stream ────────────────────────────────────────────────────────────────
 
-export async function queryRagStream(question: string): Promise<ReadableStream> {
+export async function queryRagStream(question: string, history: HistoryMessage[] = []): Promise<ReadableStream> {
 	console.log(`\n[RAG] ═══════════════════════════════════════════════════════`);
 	console.log(`[RAG] New question: "${question}"`);
+	if (history.length > 0) {
+		console.log(`[RAG] Conversation history: ${history.length} messages`);
+	}
 
-	const embedding = await embedQuestion(question);
-	const context = await retrieveContext(embedding, question);
+	const standaloneQuestion = await rewriteQuestion(question, history);
+	const embedding = await embedQuestion(standaloneQuestion);
+	const context = await retrieveContext(embedding, standaloneQuestion);
 
 	if (!context) {
 		console.log("[RAG] Sending to Groq with empty context.");
@@ -115,7 +162,7 @@ When the user says → look for this in context:
 			},
 			{
 				role: "user",
-				content: `Context:\n${context}\n\nQuestion: ${question}`,
+				content: `Context:\n${context}\n\nQuestion: ${standaloneQuestion}`,
 			},
 		],
 	});

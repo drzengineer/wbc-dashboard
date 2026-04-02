@@ -26,9 +26,6 @@ RUN chmod +x /entrypoint.sh
 ENV DAGSTER_HOME=/app/.dagster_home
 RUN mkdir -p /app/.dagster_home
 
-# dbt project dir inside container
-ENV DBT_PROJECT_DIR=/app/dbt/wbc_dbt
-
 # Dagster webserver UI port
 EXPOSE 3000
 

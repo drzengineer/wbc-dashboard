@@ -1,82 +1,73 @@
-# ⚾ WBC Dashboard
+# WBC Dashboard
 
-```{=html}
-<p align="center">
+⚾ A modern data platform + AI interface for exploring World Baseball Classic data
+
+**Live Demo:** [wbc.davidr.io](https://wbc.davidr.io)
+
+---
+
+## What It Does
+
+A production-deployed analytics dashboard for the World Baseball Classic, with a full AI chat interface powered by a custom RAG pipeline. Users can browse standings, game results, and player stats across every WBC tournament — and ask natural-language questions answered by an LLM grounded in the actual tournament data.
+
+🚀 **The idea**
+
+Most dashboards stop at charts.
+
+This one:
+
+- Builds a complete data platform (ingestion → modeling → orchestration)
+- Embeds a production-style RAG pipeline
+- Lets users explore data through both UI and natural language
+
+👉 It's not just a dashboard — it's a full-stack data + AI system
+
+
+---
+
+## Architecture
+
+![Architecture Diagram](assets/architecture.svg)
+
 ```
-`<b>`{=html}A full-stack data platform + AI interface for the World
-Baseball Classic`</b>`{=html}`<br/>`{=html} `<i>`{=html}Explore baseball
-data visually --- or just ask it questions`</i>`{=html}
-```{=html}
-</p>
-```
-```{=html}
-<p align="center">
-```
-`<a href="https://wbc.davidr.io">`{=html}`<b>`{=html}🌐 Live
-Demo`</b>`{=html}`</a>`{=html} • `<a href="#">`{=html}`<b>`{=html}📦
-GitHub`</b>`{=html}`</a>`{=html}
-```{=html}
-</p>
-```
-
-------------------------------------------------------------------------
-
-```{=html}
-<p align="center">
-```
-`<img src="https://img.shields.io/badge/Frontend-SvelteKit-ff3e00?style=for-the-badge&logo=svelte" />`{=html}
-`<img src="https://img.shields.io/badge/Database-PostgreSQL-316192?style=for-the-badge&logo=postgresql" />`{=html}
-`<img src="https://img.shields.io/badge/Transform-dbt-ff694b?style=for-the-badge" />`{=html}
-`<img src="https://img.shields.io/badge/Orchestration-Dagster-5c6ac4?style=for-the-badge" />`{=html}
-`<img src="https://img.shields.io/badge/AI-RAG%20%2B%20LLM-black?style=for-the-badge" />`{=html}
-```{=html}
-</p>
-```
-
-------------------------------------------------------------------------
-
-## 🚀 The idea
-
-Most data projects stop here:
-
-> "Here's a dashboard."
-
-This one goes further:
-
--   📊 **Interactive analytics UI**
--   🧠 **AI that answers questions about your data**
--   ⚙️ **Production-style data pipeline**
-
-👉 It's a **data platform**, not just a frontend.
-
-------------------------------------------------------------------------
-
-## ⚡ Demo
-
-### 📊 Dashboard
-
-```{=html}
-<p align="center">
-```
-`<img src="assets/dashboard.gif" width="800"/>`{=html}
-```{=html}
-</p>
-```
-### 💬 AI Chat (RAG)
-
-```{=html}
-<p align="center">
-```
-`<img src="assets/chat.gif" width="800"/>`{=html}
-```{=html}
-</p>
+MLB Stats API (free, no auth)
+        ↓
+Python ELT — loads raw JSON as JSONB, no transformation at ingestion time
+        ↓
+Supabase PostgreSQL
+  ├── raw schema        (untransformed API data)
+  ├── analytics schema  (dbt-transformed models — 7 models, 50 tests)
+  └── vectors schema    (pgvector embeddings for RAG, HNSW index)
+        ↓
+dbt — SQL transforms: staging views → analytics tables
+        ↓
+Dagster — orchestrates ingestion → dbt run/test → embedding refresh
+        ↓
+SentenceTransformer (all-MiniLM-L6-v2, local, 384 dims, ~16K sentences embedded)
++ pgvector HNSW similarity search
++ Groq llama-3.3-70b-versatile (streaming RAG responses)
+        ↓
+SvelteKit — frontend dashboard + backend API routes (TypeScript)
+        ↓
+Vercel (SvelteKit) + AWS EC2 (Dockerized pipeline)
++ GitHub Actions CI/CD (dbt tests on every push, auto-deploy on merge)
 ```
 
-------------------------------------------------------------------------
+🏗️ **Architecture (End-to-End)**
 
-## 🧠 How the AI works
+Pipeline:
 
-``` mermaid
+Ingest → Transform → Embed → Retrieve → Generate → UI
+
+![Dagster UI — Asset Graph showing ingestion → dbt → embeddings pipeline](assets/dagster-ui.png)
+
+![dbt Lineage Graph — staging views → analytics tables](assets/dbt-lineage.png)
+
+---
+
+## 🤖 RAG System | 🧠 How the AI works
+
+```
 graph LR
     A[User Question] --> B[Rewrite Query]
     B --> C[Embedding]
@@ -84,47 +75,157 @@ graph LR
     D --> E[Context]
     E --> F[LLM Answer]
 ```
+**Flow**
 
-------------------------------------------------------------------------
+- Rewrite user query (resolve context)
+- Embed query locally
+- Retrieve relevant rows (pgvector)
+- Generate answer (LLM, streaming)
 
-## 🏗️ Architecture
+**Why it's interesting**
 
-``` mermaid
-graph TD
-    A[MLB API] --> B[Postgres]
-    B --> C[dbt Models]
-    B --> D[pgvector]
+- ⚡ No LangChain → zero abstraction overhead
+- 💸 No paid embeddings → fully local
+- 🧩 Single database → Postgres + vectors
+- 🔍 Deterministic + debuggable
 
-    C --> E[Analytics Tables]
-    D --> F[Vector Search]
+### 🧠 What it does?
 
-    G[Dagster] --> A
-    G --> C
-    G --> D
+📊 **Explore structured data**
 
-    H[Embeddings Model] --> D
-    I[LLM] --> J[RAG]
+- Tournament brackets, standings, and results
+- Player leaderboards and profiles
+- Multi-season historical analysis (2006–2026)
 
-    F --> J
-    K[SvelteKit] --> J
-    K --> B
+💬 **Ask questions in plain English**
+
+- "Who had the best OPS in 2017?"
+- "Which team scored the most runs in the semifinals?"
+- "Compare Shohei Ohtani's WBC performances"
+
+🤖 **The system:**
+
+- Understands context
+- Retrieves relevant data
+- Streams a grounded answer
+
+
+
+## RAG Pipeline
+
+```
+User message + conversation history
+        ↓
+rewriteQuestion() — Groq (temp=0, max_tokens=128)
+  Resolves pronouns, adds year/team context from history
+  Strictly rewrites — never answers
+        ↓
+embedQuestion() — local all-MiniLM-L6-v2 via @xenova/transformers
+  384-dim vector
+        ↓
+retrieveContext() — vectors.match_embeddings RPC (Supabase)
+  HNSW cosine similarity, match_count=40, threshold=0.4
+        ↓
+queryRagStream() — Groq SDK (llama-3.3-70b-versatile)
+  System prompt + RAG context + standalone question
+  No conversation history in final call (avoids LLM referencing prior answers instead of retrieved data)
+        ↓
+ReadableStream → SvelteKit Response → client reader loop
+  Tokens streamed and rendered progressively
 ```
 
-------------------------------------------------------------------------
+---
 
-## 🧱 Stack
+## 🧱 Tech Stack
 
--   SvelteKit\
--   PostgreSQL (Supabase)\
--   dbt\
--   Dagster\
--   pgvector\
--   all-MiniLM-L6-v2\
--   Groq (Llama 3)\
--   Docker + AWS EC2
+| Layer | Technology |
+|---|---|
+| **Ingestion** | Python |
+| **Database** | PostgreSQL via Supabase |
+| **Vector storage** | pgvector (HNSW index) |
+| **Transforms** | dbt |
+| **Orchestration** | Dagster |
+| **Embeddings** | all-MiniLM-L6-v2 (local) |
+| **LLM** | Groq llama-3.3-70b-versatile |
+| **Frontend + API** | SvelteKit + TypeScript |
+| **Containerization** | Docker |
+| **CI/CD** | GitHub Actions |
+| **Frontend deploy** | Vercel |
+| **Pipeline deploy** | AWS EC2 (m7i-flex.large) |
 
-------------------------------------------------------------------------
+---
 
-## 📄 License
+## 🚀 Core Engineering Principles & Decisions
 
-MIT
+- 🧩 **Keep it simple, keep it local**  
+  Postgres + pgvector + local embeddings replace Snowflake, Pinecone, and external APIs — reducing system complexity, cost, and operational overhead while maintaining performance at this scale.
+
+- ⚖️ **Right tool for the real scale**  
+  Designed for a dataset under 50K rows — prioritizing correctness, speed, and simplicity over unnecessary distributed systems or premature optimization.
+
+- 🧠 **Production-grade RAG architecture (not tutorial RAG)**  
+  End-to-end pipeline with clear separation of retrieval and generation, including pre-embedding query rewriting to resolve context and significantly improve similarity accuracy.
+
+- 🔍 **Optimized vector search with HNSW**  
+  Switched from ivfflat to HNSW indexing — achieving ~70% better similarity scores (~0.39 → ~0.66), higher recall, and no training overhead.
+
+- ⚡ **High-performance, zero-cost embeddings**  
+  Local SentenceTransformers (`all-MiniLM-L6-v2`) replace API-based embeddings — enabling ~16K sentences per run with no rate limits or external dependencies.
+
+- 🛠️ **Modern, asset-based orchestration (Dagster + dbt)**  
+  Dagster chosen over Airflow for its asset-first design, native dbt integration, and long-term viability — enabling clear lineage and maintainable pipelines.
+
+- 🔄 **ELT architecture with clean separation of concerns**  
+  Raw JSON data lands untransformed in Postgres; dbt handles all modeling — keeping ingestion simple and transformations transparent and reproducible.
+
+- 🚫 **No unnecessary abstraction layers**  
+  Avoided frameworks like LangChain — direct integration with embedding models, vector search, and LLM APIs ensures full control, debuggability, and system transparency.
+
+- 🧾 **Sentence-engineered embeddings for better retrieval**  
+  Structured data transformed into natural-language sentences and Q&A pairs — boosting retrieval quality from ~0.4 to 0.7+ by improving semantic representation.
+
+- 🧠 **RAG over MCP for static data**  
+  Pre-indexed embeddings outperform tool-calling for historical datasets — delivering lower latency and a simpler, more reliable architecture.
+
+---
+
+## Project Structure
+
+```
+wbc-dashboard/
+├── pipeline/
+│   ├── ingestion/
+│   │   ├── ingest.py          # MLB Stats API → Supabase raw schema
+│   │   └── embed.py           # analytics → sentence engineering → vectors.embeddings
+│   ├── dbt/wbc_dbt/
+│   │   ├── models/
+│   │   │   ├── staging/       # stg_schedule, stg_players, stg_player_game_stats
+│   │   │   └── analytics/     # game_results, standings, player_game_stats, player_tournament_stats
+│   │   └── macros/            # generate_schema_name (prevents schema doubling)
+│   ├── dagster/wbc_dagster/
+│   │   └── assets/            # ingestion.py, dbt_assets.py, embeddings.py
+│   ├── Dockerfile
+│   ├── entrypoint.sh          # generates profiles.yml from env vars at runtime
+│   └── docker-compose.yml
+└── frontend/
+    └── src/
+        ├── lib/server/
+        │   ├── db.ts          # Supabase server client (service role, analytics schema)
+        │   └── rag.ts         # rewriteQuestion → embedQuestion → retrieveContext → queryRagStream
+        └── routes/
+            ├── +page.svelte              # standings + bracket + recent games
+            ├── games/                    # game browser
+            ├── players/                  # leaderboards
+            ├── players/[id]/             # player profile + game log
+            ├── chat/                     # streaming AI chat UI
+            └── api/chat/+server.ts       # RAG endpoint
+```
+
+---
+
+## 🎯 What This Project Demonstrates
+
+- End-to-end data engineering pipeline design
+- Practical RAG implementation without frameworks
+- Real-world tradeoff decisions
+- Ability to ship a full-stack + AI production system

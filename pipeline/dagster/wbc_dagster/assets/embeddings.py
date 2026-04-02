@@ -13,8 +13,8 @@ from dagster import AssetKey, asset, get_dagster_logger
 
 # embed.py lives at pipeline/ingestion/embed.py
 # This file lives at pipeline/dagster/wbc_dagster/assets/embeddings.py
-# So we go up 4 levels: assets → wbc_dagster → dagster → pipeline → ingestion
-EMBED_SCRIPT = Path(__file__).resolve().parents[4] / "ingestion" / "embed.py"
+# parents[3] = pipeline/ locally, /app/ in container
+EMBED_SCRIPT = Path(__file__).resolve().parents[3] / "ingestion" / "embed.py"
 
 
 @asset(

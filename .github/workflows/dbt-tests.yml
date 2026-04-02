@@ -20,13 +20,12 @@ jobs:
           python-version: "3.11"
 
       - name: Install dbt-postgres
-        run: |
-          pip install dbt-postgres
+        run: pip install dbt-postgres
 
       - name: Generate profiles.yml
         run: |
           mkdir -p ~/.dbt
-          cat > ~/.dbt/profiles.yml << 'EOF'
+          cat > ~/.dbt/profiles.yml << EOF
           wbc_dbt:
             target: dev
             outputs:
@@ -41,6 +40,10 @@ jobs:
                 sslmode: require
                 threads: 4
           EOF
+
+      - name: dbt deps
+        working-directory: pipeline/dbt/wbc_dbt
+        run: dbt deps
 
       - name: dbt run
         working-directory: pipeline/dbt/wbc_dbt

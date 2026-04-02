@@ -1,60 +1,103 @@
-# WBC Dashboard
+# ⚾ WBC Dashboard
 
-⚾ A modern data platform + AI interface for exploring World Baseball Classic data
+A production-grade **data engineering + AI system** for exploring World Baseball Classic data through both a modern dashboard and a natural-language interface.
 
-**Live Demo:** [wbc.davidr.io](https://wbc.davidr.io)
+🔗 **Live Demo:** https://wbc.davidr.io
 
 ---
 
 ## 🚀 TL;DR
 
-A full-stack data engineering + AI system that:
+This project demonstrates an end-to-end data + AI platform that:
 
--   Processes and models multi-year sports data (2006--2026)
--   Implements a custom RAG pipeline without frameworks
--   Achieves high-recall semantic search using pgvector (HNSW)
--   Streams grounded LLM responses in real time
+- Builds a complete ELT pipeline (Python → PostgreSQL → dbt → Dagster)
+- Implements a **custom RAG pipeline** without frameworks like LangChain
+- Uses **pgvector (HNSW)** for high-recall semantic retrieval
+- Generates **grounded, streaming LLM responses** in real time
+- Deploys across **Vercel (frontend) + AWS EC2 (pipeline)**
 
-👉 Demonstrates production-level data engineering and applied AI system
-design
+👉 Designed to showcase **production-level data engineering + applied AI system design**
+
+## 📊 What It Does
+
+An interactive analytics platform for the World Baseball Classic (2006–2026), combining:
+
+- 📈 Structured data exploration (standings, games, player stats)
+- 💬 Natural-language querying via an AI chat interface
+- ⚙️ A full backend data platform powering both
+
+Users can:
+
+- Browse tournament results and player performance across all WBC years
+- Ask questions like:
+  - “Who had the best OPS in 2017?”
+  - “Which team scored the most runs in the semifinals?”
+  - “Compare Shohei Ohtani’s WBC performances”
+- Receive **real-time, grounded answers** based strictly on tournament data
 
 ---
 
-## What It Does
-
-A production-deployed analytics dashboard for the World Baseball Classic, with a full AI chat interface powered by a custom RAG pipeline. Users can browse standings, game results, and player stats across every WBC tournament — and ask natural-language questions answered by an LLM grounded in the actual tournament data.
-
-🚀 **The idea**
+### 💡 Key Idea
 
 Most dashboards stop at charts.
 
-This one:
+This project extends that model by:
 
-- Builds a complete data platform (ingestion → modeling → orchestration)
-- Embeds a production-style RAG pipeline
-- Lets users explore data through both UI and natural language
+- Building a **complete data platform** (ingestion → modeling → orchestration)
+- Adding a **production-style RAG pipeline**
+- Enabling **dual interaction modes**: UI + natural language
 
-👉 It's not just a dashboard — it's a full-stack data + AI system
+👉 The result is a unified **data + AI system**, not just a dashboard
 
+## 📈 Results
 
----
+- ~70% improvement in vector similarity after HNSW + sentence engineering (\~0.39 → ~0.66)
+- ~16,000+ embeddings generated locally per run (no API limits)
+- Sub-second semantic retrieval using pgvector
+- Real-time streaming responses via LLM API
+- Fully functional pipeline orchestrated and deployed in production
 
-## Architecture
+👉 Demonstrates measurable improvements in retrieval quality, system performance, and cost efficiency
+
+## 🏗️ Architecture
 
 ![Architecture Diagram](assets/architecture.svg)
 
-### Pipeline:
+### Pipeline
 
 Ingest → Transform → Embed → Retrieve → Generate → UI
 
+- **Ingestion:** Python pulls MLB Stats API data into PostgreSQL
+- **Transform:** dbt models clean and structure data into analytics tables
+- **Orchestration:** Dagster manages pipeline execution and dependencies
+- **Embedding:** Local SentenceTransformer generates vector embeddings
+- **Retrieval:** pgvector (HNSW) performs high-recall similarity search
+- **Generation:** LLM produces grounded responses using retrieved context
+- **Frontend:** SvelteKit dashboard + streaming chat interface
 
- <img src="assets/dagster-ui.png" alt="Dagster UI — Asset Graph showing ingestion → dbt → embeddings pipeline" />
+## 🤖 RAG System — How It Works
+
+The system converts user queries into standalone questions, retrieves relevant data via vector search, and generates grounded responses using only retrieved context.
+
+![RAG Diagram](assets/vector-rag.png)
+
+### Key Components
+
+- 🔄 **Context-aware query rewriting**  
+  Resolves follow-ups and ambiguity (e.g., “he” → “Shohei Ohtani”)
+
+- ⚡ **Local embedding pipeline**  
+  all-MiniLM-L6-v2 runs on-device — no APIs, no rate limits
+
+- 🔍 **Vector retrieval (pgvector + HNSW)**  
+  High-recall similarity search directly inside PostgreSQL
+
+- 🧠 **Grounded LLM generation (streaming)**  
+  Final responses use only retrieved data — no hallucinated context
 
 ---
 
-## 🤖 RAG System — How the AI Works
-
- ### RAG Flow
+### RAG Flow
 
 ```
 User Query + Conversation History
@@ -70,134 +113,190 @@ Generate (LLM with retrieved context only)
 Stream response to UI
 ```
 
+## ✨ Why This Matters
 
-- 🔄 **Context-aware query rewriting**  
-  Resolves follow-ups and ambiguity before retrieval (e.g., “he” → “Shohei Ohtani”)
+This project is designed to reflect how modern data + AI systems are built in production environments.
 
-- ⚡ **Fast, local embedding pipeline**  
-  Generates embeddings on-device — no APIs, no rate limits
+### 🧠 Real-World Engineering Tradeoffs
+- Uses **PostgreSQL + pgvector** instead of separate data warehouse + vector DB  
+- Chooses **local embeddings** over paid APIs to reduce cost and dependencies  
+- Applies **RAG instead of tool-calling** for static analytical data  
 
-- 🔍 **High-recall vector search (pgvector)**  
-  Retrieves the most relevant rows using HNSW indexing inside Postgres
-
-- 🧠 **Grounded answer generation (LLM, streaming)**  
-  Uses retrieved context to produce accurate, real-time responses
-
-
-## ✨ Why It’s Interesting
-
-- ⚡ **No LangChain** → zero abstraction, full control  
-- 💸 **No paid embeddings** → fully local + cost-free  
-- 🧩 **Single system design** → Postgres handles relational + vector workloads  
-- 🔍 **Deterministic + debuggable** → every step is inspectable
-
-
-
-## 🧠 What It Enables
-
-- 📊 **Explore structured data naturally**  
-  Tournament brackets, standings, player stats, and multi-season history (2006–2026)
-
-- 💬 **Ask questions in plain English**  
-  - “Who had the best OPS in 2017?”  
-  - “Which team scored the most runs in the semifinals?”  
-  - “Compare Shohei Ohtani’s WBC performances”
-
-- 🤖 **End-to-end intelligent system**  
-  Understands context → retrieves relevant data → streams grounded answers
+👉 Demonstrates the ability to choose the *right tools for the actual problem and scale*
 
 ---
+
+### ⚙️ End-to-End System Ownership
+- Data ingestion → modeling → orchestration → API → frontend → deployment
+- Fully deployed across cloud infrastructure (Vercel + AWS EC2)
+
+👉 Shows ability to design and ship complete production systems
+
+---
+
+### 🔍 Transparent + Debuggable AI
+- No abstraction layers (no LangChain)
+- Deterministic query rewriting before retrieval
+- Clear separation between retrieval and generation
+
+👉 Every step is inspectable — critical for real-world AI systems
 
 ## 🧱 Tech Stack
 
 | Layer | Technology |
 |---|---|
 | **Ingestion** | Python |
-| **Database** | PostgreSQL via Supabase |
-| **Vector storage** | pgvector (HNSW index) |
+| **Database** | PostgreSQL (Supabase) |
+| **Vector Search** | pgvector (HNSW index) |
 | **Transforms** | dbt |
 | **Orchestration** | Dagster |
 | **Embeddings** | all-MiniLM-L6-v2 (local) |
-| **LLM** | Groq llama-3.3-70b-versatile |
+| **LLM** | Groq (llama-3.3-70b-versatile) |
 | **Frontend + API** | SvelteKit + TypeScript |
+| **Styling** | Tailwind CSS v4 |
 | **Containerization** | Docker |
 | **CI/CD** | GitHub Actions |
-| **Frontend deploy** | Vercel |
-| **Pipeline deploy** | AWS EC2 (m7i-flex.large) |
+| **Deployment** | Vercel (frontend), AWS EC2 (pipeline) |
+
+## 🚀 Core Engineering Decisions
+
+### 🧩 Unified Data + Vector System
+PostgreSQL + pgvector handles both relational and vector workloads  
+→ Eliminates need for Snowflake + Pinecone at this scale
 
 ---
 
-## 🚀 Core Engineering Principles & Decisions
-
-- 🧩 **Keep it simple, keep it local**  
-  Postgres + pgvector + local embeddings replace Snowflake, Pinecone, and external APIs — reducing system complexity, cost, and operational overhead while maintaining performance at this scale.
-
-- ⚖️ **Right tool for the real scale**  
-  Designed for a dataset under 50K rows — prioritizing correctness, speed, and simplicity over unnecessary distributed systems or premature optimization.
-
-- 🧠 **Production-grade RAG architecture (not tutorial RAG)**  
-  End-to-end pipeline with clear separation of retrieval and generation, including pre-embedding query rewriting to resolve context and significantly improve similarity accuracy.
-
-- 🔍 **Optimized vector search with HNSW**  
-  Switched from ivfflat to HNSW indexing — achieving ~70% better similarity scores (~0.39 → ~0.66), higher recall, and no training overhead.
-
-- ⚡ **High-performance, zero-cost embeddings**  
-  Local SentenceTransformers (`all-MiniLM-L6-v2`) replace API-based embeddings — enabling ~16K sentences per run with no rate limits or external dependencies.
-
-- 🛠️ **Modern, asset-based orchestration (Dagster + dbt)**  
-  Dagster chosen over Airflow for its asset-first design, native dbt integration, and long-term viability — enabling clear lineage and maintainable pipelines.
-
-- 🔄 **ELT architecture with clean separation of concerns**  
-  Raw JSON data lands untransformed in Postgres; dbt handles all modeling — keeping ingestion simple and transformations transparent and reproducible.
-
-- 🚫 **No unnecessary abstraction layers**  
-  Avoided frameworks like LangChain — direct integration with embedding models, vector search, and LLM APIs ensures full control, debuggability, and system transparency.
-
-- 🧾 **Sentence-engineered embeddings for better retrieval**  
-  Structured data transformed into natural-language sentences and Q&A pairs — boosting retrieval quality from ~0.4 to 0.7+ by improving semantic representation.
-
-- 🧠 **RAG over MCP for static data**  
-  Pre-indexed embeddings outperform tool-calling for historical datasets — delivering lower latency and a simpler, more reliable architecture.
+### ⚖️ Designed for Realistic Data Scale
+Dataset (~50K rows) does not justify distributed systems  
+→ Prioritizes simplicity, correctness, and performance
 
 ---
 
-## Project Structure
+### 🧠 Custom RAG Pipeline (No Frameworks)
+Built without LangChain  
+→ Full control, better debuggability, no unnecessary abstraction
+
+---
+
+### 🔍 HNSW for High-Recall Retrieval
+Switched from ivfflat → HNSW  
+→ ~70% improvement in similarity scores (\~0.39 → ~0.66)
+
+---
+
+### ⚡ Local, Zero-Cost Embeddings
+all-MiniLM-L6-v2 runs on CPU  
+→ No API costs, no rate limits, fast batch processing (~16K rows/run)
+
+---
+
+### 🛠️ Modern Data Stack (dbt + Dagster)
+- dbt for SQL transformations and testing  
+- Dagster for asset-based orchestration and lineage  
+
+→ Clean, maintainable, production-ready pipelines
+
+---
+
+### 🔄 ELT Architecture
+Raw data stored untransformed; dbt handles modeling  
+→ Clear separation of concerns and reproducibility
+
+---
+
+### 🧠 Sentence-Engineered Embeddings
+Structured data converted into natural-language sentences + Q&A pairs  
+→ Improves retrieval quality significantly (~0.4 → 0.7+)
+
+---
+
+### ⚡ RAG Over Tool-Calling
+Pre-indexed embeddings outperform tool-calling for static datasets  
+→ Lower latency, simpler architecture, more reliable responses
+
+## 🛠️ Local Setup
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/yourusername/wbc-dashboard.git
+cd wbc-dashboard
+```
+
+### 2. Start the pipeline (Docker)
+
+```
+cd pipeline
+docker compose up --build
+```
+### 3. Run ingestion + transforms
+
+```
+# inside container or local venv
+python ingestion/ingest.py
+dbt run
+dbt test
+```
+
+### 4. Generate embeddings
+
+```
+python ingestion/embed.py
+```
+
+### 5. Start frontend
+
+```
+cd ../frontend
+npm install
+npm run dev
+```
+### 6. Environment Variables
+
+```
+Create .env files for:
+
+Supabase credentials
+Groq API key
+```
+
+### 👉 Full pipeline + frontend should now be running locally
+
+---
+
+## 📁 Project Structure
 
 ```
 wbc-dashboard/
 ├── pipeline/
-│   ├── ingestion/
-│   │   ├── ingest.py          # MLB Stats API → Supabase raw schema
-│   │   └── embed.py           # analytics → sentence engineering → vectors.embeddings
-│   ├── dbt/wbc_dbt/
-│   │   ├── models/
-│   │   │   ├── staging/       # stg_schedule, stg_players, stg_player_game_stats
-│   │   │   └── analytics/     # game_results, standings, player_game_stats, player_tournament_stats
-│   │   └── macros/            # generate_schema_name (prevents schema doubling)
-│   ├── dagster/wbc_dagster/
-│   │   └── assets/            # ingestion.py, dbt_assets.py, embeddings.py
-│   ├── Dockerfile
-│   ├── entrypoint.sh          # generates profiles.yml from env vars at runtime
-│   └── docker-compose.yml
-└── frontend/
-    └── src/
-        ├── lib/server/
-        │   ├── db.ts          # Supabase server client (service role, analytics schema)
-        │   └── rag.ts         # rewriteQuestion → embedQuestion → retrieveContext → queryRagStream
-        └── routes/
-            ├── +page.svelte              # standings + bracket + recent games
-            ├── games/                    # game browser
-            ├── players/                  # leaderboards
-            ├── players/[id]/             # player profile + game log
-            ├── chat/                     # streaming AI chat UI
-            └── api/chat/+server.ts       # RAG endpoint
+│ ├── ingestion/ # API ingestion + embeddings
+│ ├── dbt/ # SQL models (staging + analytics)
+│ ├── dagster/ # Orchestration assets
+│ ├── Dockerfile
+│ └── docker-compose.yml
+├── frontend/
+│ ├── src/
+│ │ ├── routes/ # Pages (dashboard, games, players, chat)
+│ │ └── lib/server/ # RAG pipeline + DB client
+├── .github/workflows/ # CI/CD pipelines
+└── README.md
 ```
-
----
 
 ## 🎯 What This Project Demonstrates
 
-- End-to-end data engineering pipeline design
+- End-to-end data engineering pipeline design (ELT, dbt, orchestration)
 - Practical RAG implementation without frameworks
-- Real-world tradeoff decisions
-- Ability to ship a full-stack + AI production system
+- Real-world system design tradeoffs and tool selection
+- Vector search and semantic retrieval using pgvector
+- Deployment of a full-stack + AI system in production
+
+---
+
+## 📌 Summary
+
+This project reflects the ability to:
+
+- Design scalable data systems
+- Build and deploy applied AI pipelines
+- Make pragmatic engineering decisions based on real constraints
+
+👉 Built to demonstrate readiness for **data engineering and applied AI roles**

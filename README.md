@@ -34,14 +34,14 @@ This one:
 Ingest → Transform → Embed → Retrieve → Generate → UI
 
 <p align="center">
-  <img src="assets/dagster-ui.png" alt="Dagster UI — Asset Graph showing ingestion → dbt → embeddings pipeline" width="90%" />
+  <img src="assets/dagster-ui.png" alt="Dagster UI — Asset Graph showing ingestion → dbt → embeddings pipeline" width="80%" />
 </p>
 
 ---
 
-## 🤖 RAG System | 🧠 How the AI works
+## 🤖 RAG System — How the AI Works
 
-```markdown
+
 ```mermaid
 graph LR
     A[User Question] --> B[Rewrite Query]
@@ -52,41 +52,42 @@ graph LR
 ```
 
 
-**Flow**
+- 🔄 **Context-aware query rewriting**  
+  Resolves follow-ups and ambiguity before retrieval (e.g., “he” → “Shohei Ohtani”)
 
-- Rewrite user query (resolve context)
-- Embed query locally
-- Retrieve relevant rows (pgvector)
-- Generate answer (LLM, streaming)
+- ⚡ **Fast, local embedding pipeline**  
+  Generates embeddings on-device — no APIs, no rate limits
 
-**Why it's interesting**
+- 🔍 **High-recall vector search (pgvector)**  
+  Retrieves the most relevant rows using HNSW indexing inside Postgres
 
-- ⚡ No LangChain → zero abstraction overhead
-- 💸 No paid embeddings → fully local
-- 🧩 Single database → Postgres + vectors
-- 🔍 Deterministic + debuggable
-
-### 🧠 What it does?
-
-📊 **Explore structured data**
-
-- Tournament brackets, standings, and results
-- Player leaderboards and profiles
-- Multi-season historical analysis (2006–2026)
-
-💬 **Ask questions in plain English**
-
-- "Who had the best OPS in 2017?"
-- "Which team scored the most runs in the semifinals?"
-- "Compare Shohei Ohtani's WBC performances"
-
-🤖 **The system:**
-
-- Understands context
-- Retrieves relevant data
-- Streams a grounded answer
+- 🧠 **Grounded answer generation (LLM, streaming)**  
+  Uses retrieved context to produce accurate, real-time responses
 
 
+## ✨ Why It’s Interesting
+
+- ⚡ **No LangChain** → zero abstraction, full control  
+- 💸 **No paid embeddings** → fully local + cost-free  
+- 🧩 **Single system design** → Postgres handles relational + vector workloads  
+- 🔍 **Deterministic + debuggable** → every step is inspectable
+
+
+
+## 🧠 What It Enables
+
+- 📊 **Explore structured data naturally**  
+  Tournament brackets, standings, player stats, and multi-season history (2006–2026)
+
+- 💬 **Ask questions in plain English**  
+  - “Who had the best OPS in 2017?”  
+  - “Which team scored the most runs in the semifinals?”  
+  - “Compare Shohei Ohtani’s WBC performances”
+
+- 🤖 **End-to-end intelligent system**  
+  Understands context → retrieves relevant data → streams grounded answers
+
+---
 
 ## RAG Pipeline
 

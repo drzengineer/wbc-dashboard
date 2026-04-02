@@ -58,21 +58,23 @@ Pipeline:
 Ingest → Transform → Embed → Retrieve → Generate → UI
 
 <p align="center">
-  <img src="assets/dagster-ui.png" alt="Dagster UI — Asset Graph showing ingestion → dbt → embeddings pipeline" width="48%" />
-  <img src="assets/dbt-lineage.png" alt="dbt Lineage Graph — staging views → analytics tables" width="48%" />
+  <img src="assets/dagster-ui.png" alt="Dagster UI — Asset Graph showing ingestion → dbt → embeddings pipeline" width="80%" />
 </p>
 
 ---
 
 ## 🤖 RAG System | 🧠 How the AI works
 
+```markdown
 ```mermaid
 graph LR
     A[User Question] --> B[Rewrite Query]
-    B --> C[Embedding]
-    C --> D[Vector Search]
-    D --> E[Context]
-    E --> F[LLM Answer]
+    B --> C[Embedding Generation]
+    C --> D[Vector Search (pgvector)]
+    D --> E[Retrieved Context]
+    E --> F[LLM Answer (Groq)]
+
+
 **Flow**
 
 - Rewrite user query (resolve context)

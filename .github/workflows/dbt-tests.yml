@@ -1,0 +1,51 @@
+name: dbt Tests
+
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  dbt-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dbt-postgres
+        run: |
+          pip install dbt-postgres
+
+      - name: Generate profiles.yml
+        run: |
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml << 'EOF'
+          wbc_dbt:
+            target: dev
+            outputs:
+              dev:
+                type: postgres
+                host: ${{ secrets.DB_HOST }}
+                port: 5432
+                user: ${{ secrets.DB_USER }}
+                password: ${{ secrets.DB_PASSWORD }}
+                dbname: ${{ secrets.DB_NAME }}
+                schema: analytics
+                sslmode: require
+                threads: 4
+          EOF
+
+      - name: dbt run
+        working-directory: pipeline/dbt/wbc_dbt
+        run: dbt run
+
+      - name: dbt test
+        working-directory: pipeline/dbt/wbc_dbt
+        run: dbt test

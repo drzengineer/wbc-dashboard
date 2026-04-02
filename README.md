@@ -29,36 +29,12 @@ This one:
 
 ![Architecture Diagram](assets/architecture.svg)
 
-```
-MLB Stats API (free, no auth)
-        ↓
-Python ELT — loads raw JSON as JSONB, no transformation at ingestion time
-        ↓
-Supabase PostgreSQL
-  ├── raw schema        (untransformed API data)
-  ├── analytics schema  (dbt-transformed models — 7 models, 50 tests)
-  └── vectors schema    (pgvector embeddings for RAG, HNSW index)
-        ↓
-dbt — SQL transforms: staging views → analytics tables
-        ↓
-Dagster — orchestrates ingestion → dbt run/test → embedding refresh
-        ↓
-SentenceTransformer (all-MiniLM-L6-v2, local, 384 dims, ~16K sentences embedded)
-+ pgvector HNSW similarity search
-+ Groq llama-3.3-70b-versatile (streaming RAG responses)
-        ↓
-SvelteKit — frontend dashboard + backend API routes (TypeScript)
-        ↓
-Vercel (SvelteKit) + AWS EC2 (Dockerized pipeline)
-+ GitHub Actions CI/CD (dbt tests on every push, auto-deploy on merge)
-```
-
-Pipeline:
+### Pipeline:
 
 Ingest → Transform → Embed → Retrieve → Generate → UI
 
 <p align="center">
-  <img src="assets/dagster-ui.png" alt="Dagster UI — Asset Graph showing ingestion → dbt → embeddings pipeline" width="80%" />
+  <img src="assets/dagster-ui.png" alt="Dagster UI — Asset Graph showing ingestion → dbt → embeddings pipeline" width="90%" />
 </p>
 
 ---
@@ -73,6 +49,7 @@ graph LR
     C --> D[Vector Search (pgvector)]
     D --> E[Retrieved Context]
     E --> F[LLM Answer (Groq)]
+```
 
 
 **Flow**

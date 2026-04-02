@@ -6,6 +6,20 @@
 
 ---
 
+## 🚀 TL;DR
+
+A full-stack data engineering + AI system that:
+
+-   Processes and models multi-year sports data (2006--2026)
+-   Implements a custom RAG pipeline without frameworks
+-   Achieves high-recall semantic search using pgvector (HNSW)
+-   Streams grounded LLM responses in real time
+
+👉 Demonstrates production-level data engineering and applied AI system
+design
+
+---
+
 ## What It Does
 
 A production-deployed analytics dashboard for the World Baseball Classic, with a full AI chat interface powered by a custom RAG pipeline. Users can browse standings, game results, and player stats across every WBC tournament — and ask natural-language questions answered by an LLM grounded in the actual tournament data.
@@ -40,7 +54,21 @@ Ingest → Transform → Embed → Retrieve → Generate → UI
 
 ## 🤖 RAG System — How the AI Works
 
- <img src="assets/vector-rag.png" alt="Dagster UI — Asset Graph showing ingestion → dbt → embeddings pipeline" />
+ ### RAG Flow
+
+```
+User Query + Conversation History
+↓
+Rewrite (LLM, deterministic)
+↓
+Embed (local model)
+↓
+Retrieve (pgvector similarity search)
+↓
+Generate (LLM with retrieved context only)
+↓
+Stream response to UI
+```
 
 
 - 🔄 **Context-aware query rewriting**  
@@ -77,31 +105,6 @@ Ingest → Transform → Embed → Retrieve → Generate → UI
 
 - 🤖 **End-to-end intelligent system**  
   Understands context → retrieves relevant data → streams grounded answers
-
----
-
-## RAG Pipeline
-
-```
-User message + conversation history
-        ↓
-rewriteQuestion() — Groq (temp=0, max_tokens=128)
-  Resolves pronouns, adds year/team context from history
-  Strictly rewrites — never answers
-        ↓
-embedQuestion() — local all-MiniLM-L6-v2 via @xenova/transformers
-  384-dim vector
-        ↓
-retrieveContext() — vectors.match_embeddings RPC (Supabase)
-  HNSW cosine similarity, match_count=40, threshold=0.4
-        ↓
-queryRagStream() — Groq SDK (llama-3.3-70b-versatile)
-  System prompt + RAG context + standalone question
-  No chat history in final call (prevents LLM using prior answers over retrieved data)
-        ↓
-ReadableStream → SvelteKit Response → client reader loop
-  Tokens streamed and rendered progressively
-```
 
 ---
 

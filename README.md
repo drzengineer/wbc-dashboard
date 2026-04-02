@@ -18,6 +18,8 @@ This project demonstrates an end-to-end data + AI platform that:
 
 👉 Designed to showcase **production-level data engineering + applied AI system design**
 
+---
+
 ## 📊 What It Does
 
 An interactive analytics platform for the World Baseball Classic (2006–2026), combining:
@@ -35,7 +37,7 @@ Users can:
   - “Compare Shohei Ohtani’s WBC performances”
 - Receive **real-time, grounded answers** based strictly on tournament data
 
----
+#
 
 ### 💡 Key Idea
 
@@ -49,6 +51,8 @@ This project extends that model by:
 
 👉 The result is a unified **data + AI system**, not just a dashboard
 
+---
+
 ## 📈 Results
 
 - ~70% improvement in vector similarity after HNSW + sentence engineering (\~0.39 → ~0.66)
@@ -59,9 +63,13 @@ This project extends that model by:
 
 👉 Demonstrates measurable improvements in retrieval quality, system performance, and cost efficiency
 
+---
+
 ## 🏗️ Architecture
 
 ![Architecture Diagram](assets/architecture.svg)
+
+#
 
 ### Pipeline
 
@@ -75,27 +83,11 @@ Ingest → Transform → Embed → Retrieve → Generate → UI
 - **Generation:** LLM produces grounded responses using retrieved context
 - **Frontend:** SvelteKit dashboard + streaming chat interface
 
+---
+
 ## 🤖 RAG System — How It Works
 
 The system converts user queries into standalone questions, retrieves relevant data via vector search, and generates grounded responses using only retrieved context.
-
-![RAG Diagram](assets/vector-rag.png)
-
-### Key Components
-
-- 🔄 **Context-aware query rewriting**  
-  Resolves follow-ups and ambiguity (e.g., “he” → “Shohei Ohtani”)
-
-- ⚡ **Local embedding pipeline**  
-  all-MiniLM-L6-v2 runs on-device — no APIs, no rate limits
-
-- 🔍 **Vector retrieval (pgvector + HNSW)**  
-  High-recall similarity search directly inside PostgreSQL
-
-- 🧠 **Grounded LLM generation (streaming)**  
-  Final responses use only retrieved data — no hallucinated context
-
----
 
 ### RAG Flow
 
@@ -113,9 +105,28 @@ Generate (LLM with retrieved context only)
 Stream response to UI
 ```
 
+#
+
+### Key Components
+
+- 🔄 **Context-aware query rewriting**  
+  Resolves follow-ups and ambiguity (e.g., “he” → “Shohei Ohtani”)
+
+- ⚡ **Local embedding pipeline**  
+  all-MiniLM-L6-v2 runs on-device — no APIs, no rate limits
+
+- 🔍 **Vector retrieval (pgvector + HNSW)**  
+  High-recall similarity search directly inside PostgreSQL
+
+- 🧠 **Grounded LLM generation (streaming)**  
+  Final responses use only retrieved data — no hallucinated context
+
+---
+
 ## ✨ Why This Matters
 
 This project is designed to reflect how modern data + AI systems are built in production environments.
+
 
 ### 🧠 Real-World Engineering Tradeoffs
 - Uses **PostgreSQL + pgvector** instead of separate data warehouse + vector DB  
@@ -124,7 +135,7 @@ This project is designed to reflect how modern data + AI systems are built in pr
 
 👉 Demonstrates the ability to choose the *right tools for the actual problem and scale*
 
----
+#
 
 ### ⚙️ End-to-End System Ownership
 - Data ingestion → modeling → orchestration → API → frontend → deployment
@@ -132,7 +143,7 @@ This project is designed to reflect how modern data + AI systems are built in pr
 
 👉 Shows ability to design and ship complete production systems
 
----
+#
 
 ### 🔍 Transparent + Debuggable AI
 - No abstraction layers (no LangChain)
@@ -140,6 +151,8 @@ This project is designed to reflect how modern data + AI systems are built in pr
 - Clear separation between retrieval and generation
 
 👉 Every step is inspectable — critical for real-world AI systems
+
+---
 
 ## 🧱 Tech Stack
 
@@ -158,37 +171,39 @@ This project is designed to reflect how modern data + AI systems are built in pr
 | **CI/CD** | GitHub Actions |
 | **Deployment** | Vercel (frontend), AWS EC2 (pipeline) |
 
+---
+
 ## 🚀 Core Engineering Decisions
 
 ### 🧩 Unified Data + Vector System
 PostgreSQL + pgvector handles both relational and vector workloads  
 → Eliminates need for Snowflake + Pinecone at this scale
 
----
+#
 
 ### ⚖️ Designed for Realistic Data Scale
 Dataset (~50K rows) does not justify distributed systems  
 → Prioritizes simplicity, correctness, and performance
 
----
+#
 
 ### 🧠 Custom RAG Pipeline (No Frameworks)
 Built without LangChain  
 → Full control, better debuggability, no unnecessary abstraction
 
----
+#
 
 ### 🔍 HNSW for High-Recall Retrieval
 Switched from ivfflat → HNSW  
 → ~70% improvement in similarity scores (\~0.39 → ~0.66)
 
----
+#
 
 ### ⚡ Local, Zero-Cost Embeddings
 all-MiniLM-L6-v2 runs on CPU  
 → No API costs, no rate limits, fast batch processing (~16K rows/run)
 
----
+#
 
 ### 🛠️ Modern Data Stack (dbt + Dagster)
 - dbt for SQL transformations and testing  
@@ -196,23 +211,25 @@ all-MiniLM-L6-v2 runs on CPU
 
 → Clean, maintainable, production-ready pipelines
 
----
+#
 
 ### 🔄 ELT Architecture
 Raw data stored untransformed; dbt handles modeling  
 → Clear separation of concerns and reproducibility
 
----
+#
 
 ### 🧠 Sentence-Engineered Embeddings
 Structured data converted into natural-language sentences + Q&A pairs  
 → Improves retrieval quality significantly (~0.4 → 0.7+)
 
----
+#
 
 ### ⚡ RAG Over Tool-Calling
 Pre-indexed embeddings outperform tool-calling for static datasets  
 → Lower latency, simpler architecture, more reliable responses
+
+---
 
 ## 🛠️ Local Setup
 
@@ -280,7 +297,7 @@ wbc-dashboard/
 ├── .github/workflows/ # CI/CD pipelines
 └── README.md
 ```
-
+---
 ## 🎯 What This Project Demonstrates
 
 - End-to-end data engineering pipeline design (ELT, dbt, orchestration)

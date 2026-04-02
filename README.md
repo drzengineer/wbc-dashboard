@@ -36,20 +36,11 @@ Ingest → Transform → Embed → Retrieve → Generate → UI
 
  <img src="assets/dagster-ui.png" alt="Dagster UI — Asset Graph showing ingestion → dbt → embeddings pipeline" />
 
-
 ---
 
 ## 🤖 RAG System — How the AI Works
 
-
-```mermaid
-graph LR
-    A["User Question"] --> B["Rewrite Query"]
-    B --> C["Embedding Generation"]
-    C --> D["Vector Search - pgvector"]
-    D --> E["Retrieved Context"]
-    E --> F["LLM Answer - Groq"]
-```
+ <img src="assets/vector-rag.png" alt="Dagster UI — Asset Graph showing ingestion → dbt → embeddings pipeline" />
 
 
 - 🔄 **Context-aware query rewriting**  
@@ -106,7 +97,7 @@ retrieveContext() — vectors.match_embeddings RPC (Supabase)
         ↓
 queryRagStream() — Groq SDK (llama-3.3-70b-versatile)
   System prompt + RAG context + standalone question
-  No conversation history in final call (avoids LLM referencing prior answers instead of retrieved data)
+  No chat history in final call (prevents LLM using prior answers over retrieved data)
         ↓
 ReadableStream → SvelteKit Response → client reader loop
   Tokens streamed and rendered progressively

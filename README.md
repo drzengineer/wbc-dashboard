@@ -53,28 +53,26 @@ Vercel (SvelteKit) + AWS EC2 (Dockerized pipeline)
 + GitHub Actions CI/CD (dbt tests on every push, auto-deploy on merge)
 ```
 
-🏗️ **Architecture (End-to-End)**
-
 Pipeline:
 
 Ingest → Transform → Embed → Retrieve → Generate → UI
 
-![Dagster UI — Asset Graph showing ingestion → dbt → embeddings pipeline](assets/dagster-ui.png)
-
-![dbt Lineage Graph — staging views → analytics tables](assets/dbt-lineage.png)
+<p align="center">
+  <img src="assets/dagster-ui.png" alt="Dagster UI — Asset Graph showing ingestion → dbt → embeddings pipeline" width="48%" />
+  <img src="assets/dbt-lineage.png" alt="dbt Lineage Graph — staging views → analytics tables" width="48%" />
+</p>
 
 ---
 
 ## 🤖 RAG System | 🧠 How the AI works
 
-```
+```mermaid
 graph LR
     A[User Question] --> B[Rewrite Query]
     B --> C[Embedding]
     C --> D[Vector Search]
     D --> E[Context]
     E --> F[LLM Answer]
-```
 **Flow**
 
 - Rewrite user query (resolve context)

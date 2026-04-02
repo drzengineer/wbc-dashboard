@@ -33,9 +33,9 @@ This one:
 
 Ingest → Transform → Embed → Retrieve → Generate → UI
 
-<p align="center">
-  <img src="assets/dagster-ui.png" alt="Dagster UI — Asset Graph showing ingestion → dbt → embeddings pipeline" width="80%" />
-</p>
+
+ <img src="assets/dagster-ui.png" alt="Dagster UI — Asset Graph showing ingestion → dbt → embeddings pipeline" />
+
 
 ---
 
@@ -44,11 +44,11 @@ Ingest → Transform → Embed → Retrieve → Generate → UI
 
 ```mermaid
 graph LR
-    A[User Question] --> B[Rewrite Query]
-    B --> C[Embedding Generation]
-    C --> D[Vector Search (pgvector)]
-    D --> E[Retrieved Context]
-    E --> F[LLM Answer (Groq)]
+    A["User Question"] --> B["Rewrite Query"]
+    B --> C["Embedding Generation"]
+    C --> D["Vector Search - pgvector"]
+    D --> E["Retrieved Context"]
+    E --> F["LLM Answer - Groq"]
 ```
 
 

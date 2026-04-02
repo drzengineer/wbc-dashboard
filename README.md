@@ -83,6 +83,8 @@ Ingest → Transform → Embed → Retrieve → Generate → UI
 - **Generation:** LLM produces grounded responses using retrieved context
 - **Frontend:** SvelteKit dashboard + streaming chat interface
 
+![Architecture Diagram](assets/dagster-ui.svg)
+
 ---
 
 ## 🤖 RAG System — How It Works

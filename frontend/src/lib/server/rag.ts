@@ -16,7 +16,9 @@ async function embedQuestion(question: string): Promise<number[]> {
 	}
 	const output = await embedder(question, { pooling: "mean", normalize: true });
 	const embedding = Array.from(output.data) as number[];
-	console.log(`[RAG] Embedded question (${embedding.length} dims): "${question}"`);
+	console.log(
+		`[RAG] Embedded question (${embedding.length} dims): "${question}"`,
+	);
 	return embedding;
 }
 
@@ -28,14 +30,19 @@ type VectorRow = {
 	metadata: Record<string, unknown>;
 };
 
-async function retrieveContext(embedding: number[], question: string): Promise<string> {
+async function retrieveContext(
+	embedding: number[],
+	question: string,
+): Promise<string> {
 	console.log(`[RAG] Querying pgvector — match_count=40, match_threshold=0.4`);
 
-	const { data, error } = await supabase.schema("vectors").rpc("match_embeddings", {
-		query_embedding: embedding,
-		match_count: 40,
-		match_threshold: 0.4,
-	});
+	const { data, error } = await supabase
+		.schema("vectors")
+		.rpc("match_embeddings", {
+			query_embedding: embedding,
+			match_count: 40,
+			match_threshold: 0.4,
+		});
 
 	if (error) throw new Error(`pgvector error: ${error.message}`);
 
@@ -44,7 +51,9 @@ async function retrieveContext(embedding: number[], question: string): Promise<s
 		return "";
 	}
 
-	const results = (data as VectorRow[]).sort((a, b) => b.similarity - a.similarity);
+	const results = (data as VectorRow[]).sort(
+		(a, b) => b.similarity - a.similarity,
+	);
 
 	console.log(`[RAG] Retrieved ${results.length} vectors for: "${question}"`);
 	console.log("[RAG] ── Matched vectors (best → worst) ─────────────────────");
@@ -52,7 +61,8 @@ async function retrieveContext(embedding: number[], question: string): Promise<s
 		const sim = r.similarity.toFixed(4);
 		const source = r.metadata?.source ?? "unknown";
 		const season = r.metadata?.season ?? "";
-		const preview = r.content.length > 120 ? r.content.slice(0, 120) + "…" : r.content;
+		const preview =
+			r.content.length > 120 ? `${r.content.slice(0, 120)}…` : r.content;
 		console.log(
 			`[RAG]  ${String(i + 1).padStart(2)}. [${sim}] (${source}${season ? ` ${season}` : ""}) ${preview}`,
 		);
@@ -67,14 +77,19 @@ async function retrieveContext(embedding: number[], question: string): Promise<s
 	return context;
 }
 
-type HistoryMessage = { role: 'user' | 'assistant'; content: string };
+type HistoryMessage = { role: "user" | "assistant"; content: string };
 
 // ── Question rewriting ────────────────────────────────────────────────────────
 
-async function rewriteQuestion(question: string, history: HistoryMessage[]): Promise<string> {
+async function rewriteQuestion(
+	question: string,
+	history: HistoryMessage[],
+): Promise<string> {
 	if (history.length === 0) return question;
 
-	console.log(`[RAG] Rewriting question with ${history.length} history messages...`);
+	console.log(
+		`[RAG] Rewriting question with ${history.length} history messages...`,
+	);
 
 	const completion = await groq.chat.completions.create({
 		model: "llama-3.3-70b-versatile",
@@ -112,8 +127,13 @@ Output ONLY the rewritten question.`,
 
 // ── RAG stream ────────────────────────────────────────────────────────────────
 
-export async function queryRagStream(question: string, history: HistoryMessage[] = []): Promise<ReadableStream> {
-	console.log(`\n[RAG] ═══════════════════════════════════════════════════════`);
+export async function queryRagStream(
+	question: string,
+	history: HistoryMessage[] = [],
+): Promise<ReadableStream> {
+	console.log(
+		`\n[RAG] ═══════════════════════════════════════════════════════`,
+	);
 	console.log(`[RAG] New question: "${question}"`);
 	if (history.length > 0) {
 		console.log(`[RAG] Conversation history: ${history.length} messages`);
@@ -126,7 +146,9 @@ export async function queryRagStream(question: string, history: HistoryMessage[]
 	if (!context) {
 		console.log("[RAG] Sending to Groq with empty context.");
 	} else {
-		console.log(`[RAG] Sending to Groq — context length: ${context.length} chars`);
+		console.log(
+			`[RAG] Sending to Groq — context length: ${context.length} chars`,
+		);
 	}
 
 	const groqStream = await groq.chat.completions.create({

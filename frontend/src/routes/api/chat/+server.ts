@@ -5,7 +5,8 @@ import type { RequestHandler } from "./$types";
 export const POST: RequestHandler = async ({ request }) => {
 	const body = await request.json();
 	const question: string = body.question?.trim();
-	const history: Array<{ role: 'user' | 'assistant'; content: string }> = body.messages ?? [];
+	const history: Array<{ role: "user" | "assistant"; content: string }> =
+		body.messages ?? [];
 
 	if (!question) {
 		throw error(400, "question is required");

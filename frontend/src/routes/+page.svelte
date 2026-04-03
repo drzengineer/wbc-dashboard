@@ -153,122 +153,141 @@ function fmtDate(d: string) {
 	<section>
 		<h2 class="text-lg font-semibold text-white mb-6 flex items-center gap-2">
 			<Target class="w-5 h-5 text-accent" />
-			Bracket
+			Knockout Bracket
 		</h2>
 
-		<div class="flex flex-col items-center gap-6">
-			<!-- Championship -->
-			<div class="w-full max-w-lg">
-				<p class="text-xs font-bold text-gold uppercase tracking-widest text-center mb-3">Championship</p>
-				{#if bracket().final}
-					{@const f = bracket().final}
-					{@const rows = gameRows(f)}
-					<div class="bg-surface border border-gold/30 rounded-xl overflow-hidden shadow-lg shadow-gold/5">
-						<div class="px-4 py-2 border-b border-border flex items-center justify-between">
-							<span class="text-xs text-[#8888a0]">{fmtDate(f.official_date)}</span>
-							<span class="text-xs text-[#555570] truncate ml-2">{f.venue_name ?? ''}</span>
-						</div>
-						{#each rows as row, i}
-							<div class="px-4 py-3 {i > 0 ? 'border-t border-border/50' : ''} {row.isWinner ? 'bg-gold/5' : ''}">
-								<div class="flex items-center justify-between">
-								<div class="flex items-center gap-3">
-									<Flag country={row.abbr} size="lg" />
-									<div>
-											<span class="text-base font-semibold {row.isWinner ? 'text-gold' : 'text-[#8888a0]'}">
-												{#if row.isWinner}🏆 {/if}{row.abbr ?? row.name}
-											</span>
-											<span class="text-xs text-[#555570] hidden sm:inline ml-2">{row.name}</span>
-										</div>
-									</div>
-									<span class="text-2xl font-bold tabular-nums {row.isWinner ? 'text-gold' : 'text-[#555570]'}">
-										{row.score ?? '—'}
-									</span>
-								</div>
-							</div>
-						{/each}
-					</div>
-				{:else}
-					<div class="bg-surface border border-gold/20 border-dashed rounded-xl px-4 py-8 text-center text-[#555570] text-sm">TBD</div>
-				{/if}
-			</div>
+		{#if bracket().qf.length > 0 || selectedSeason >= '2023'}
+			<div class="relative">
+				<!-- Main Bracket Container - 5x3 Rigid Grid Layout -->
+				<div class="grid grid-cols-1 lg:grid-cols-5 lg:grid-rows-[130px_130px_130px] gap-0 py-6">
 
-			<!-- Connector -->
-			<div class="w-px h-6 bg-border-light"></div>
-
-			<!-- Semifinals -->
-			<div class="w-full max-w-2xl">
-				<p class="text-xs font-bold text-[#a78bfa] uppercase tracking-widest text-center mb-3">Semifinals</p>
-				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-					{#each Array(2) as _, idx}
-						{@const game = bracket().sf[idx]}
-						{#if game}
-							{@const rows = gameRows(game)}
-							<div class="bg-surface border border-border rounded-xl overflow-hidden hover:border-border-light transition-colors">
-								<div class="px-3 py-1.5 border-b border-border flex items-center justify-between">
-									<span class="text-xs text-[#8888a0]">{fmtDate(game.official_date)}</span>
-									<span class="text-xs text-[#555570] truncate ml-2">{game.venue_name ?? ''}</span>
-								</div>
-								{#each rows as row, i}
-									<div class="px-3 py-2.5 {i > 0 ? 'border-t border-border/50' : ''} {row.isWinner ? 'bg-surface-hover' : ''}">
-										<div class="flex items-center justify-between">
-										<div class="flex items-center gap-2">
-											<Flag country={row.abbr} size="sm" />
-											<span class="text-sm font-medium {row.isWinner ? 'text-white' : 'text-[#555570]'} truncate">
-													{row.abbr ?? row.name}
-												</span>
-											</div>
-											<span class="text-sm font-bold tabular-nums {row.isWinner ? 'text-white' : 'text-[#555570]'}">
-												{row.score ?? '—'}
-											</span>
-										</div>
-									</div>
-								{/each}
-							</div>
-						{:else}
-							<div class="bg-surface border border-border border-dashed rounded-xl px-4 py-6 text-center text-[#555570] text-sm">TBD</div>
-						{/if}
-					{/each}
-				</div>
-			</div>
-
-			<!-- Quarterfinals -->
-			{#if bracket().qf.length > 0 || selectedSeason >= '2023'}
-				<div class="w-px h-6 bg-border-light"></div>
-				<div class="w-full">
-					<p class="text-xs font-bold text-[#60a5fa] uppercase tracking-widest text-center mb-3">Quarterfinals</p>
-					<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-						{#each Array(4) as _, idx}
-							{@const game = bracket().qf[idx]}
-							{#if game}
-								{@const rows = gameRows(game)}
-								<div class="bg-surface border border-border rounded-xl overflow-hidden hover:border-border-light transition-colors">
-									<div class="px-3 py-1.5 border-b border-border flex items-center justify-between">
-										<span class="text-xs text-[#8888a0]">{fmtDate(game.official_date)}</span>
-									</div>
-									{#each rows as row, i}
-										<div class="px-3 py-2 {i > 0 ? 'border-t border-border/50' : ''} {row.isWinner ? 'bg-surface-hover' : ''}">
-											<div class="flex items-center justify-between">
-											<div class="flex items-center gap-1.5">
-												<Flag country={row.abbr} size="sm" />
-												<span class="text-xs font-medium {row.isWinner ? 'text-white' : 'text-[#555570]'} truncate">
-														{row.abbr ?? row.name}
-													</span>
-												</div>
-												<span class="text-sm font-bold tabular-nums {row.isWinner ? 'text-white' : 'text-[#555570]'}">
-													{row.score ?? '—'}
-												</span>
-											</div>
-										</div>
-									{/each}
-								</div>
+					<!-- ROW 1 -->
+					<div class="flex items-center">
+						<div class="w-full max-w-[350px] mx-auto">
+							{#if bracket().qf[0]}
+<GameCard game={bracket().qf[0]} size="qf" />
 							{:else}
-								<div class="bg-surface border border-border border-dashed rounded-xl px-3 py-5 text-center text-[#555570] text-xs">TBD</div>
+								<div class="bg-surface border border-border border-dashed rounded-xl px-3 py-4 text-center text-[#555570] text-xs">TBD</div>
+							{/if}
+						</div>
+					</div>
+					<div></div>
+					<div></div>
+					<div></div>
+					<div class="flex items-center">
+						<div class="w-full max-w-[350px] mx-auto">
+							{#if bracket().qf[2]}
+<GameCard game={bracket().qf[2]} size="qf" />
+							{:else}
+								<div class="bg-surface border border-border border-dashed rounded-xl px-3 py-4 text-center text-[#555570] text-xs">TBD</div>
+							{/if}
+						</div>
+					</div>
+
+					<!-- ROW 2 -->
+					<div></div>
+					<div class="flex items-center">
+						<div class="w-full max-w-[350px] mx-auto">
+							{#if bracket().sf[0]}
+<GameCard game={bracket().sf[0]} size="sf" />
+							{:else}
+								<div class="bg-surface border border-border border-dashed rounded-xl px-4 py-5 text-center text-[#555570] text-sm">TBD</div>
+							{/if}
+						</div>
+					</div>
+					<div class="flex items-center">
+						<div class="w-full max-w-[350px] mx-auto">
+							{#if bracket().final}
+<GameCard game={bracket().final} size="championship" />
+							{:else}
+								<div class="bg-surface border border-gold/20 border-dashed rounded-xl px-4 py-8 text-center text-[#555570] text-sm">TBD</div>
+							{/if}
+						</div>
+					</div>
+					<div class="flex items-center">
+						<div class="w-full max-w-[350px] mx-auto">
+							{#if bracket().sf[1]}
+<GameCard game={bracket().sf[1]} size="sf" />
+							{:else}
+								<div class="bg-surface border border-border border-dashed rounded-xl px-4 py-5 text-center text-[#555570] text-sm">TBD</div>
+							{/if}
+						</div>
+					</div>
+					<div></div>
+
+					<!-- ROW 3 -->
+					<div class="flex items-center">
+						<div class="w-full max-w-[350px] mx-auto">
+							{#if bracket().qf[1]}
+<GameCard game={bracket().qf[1]} size="qf" />
+							{:else}
+								<div class="bg-surface border border-border border-dashed rounded-xl px-3 py-4 text-center text-[#555570] text-xs">TBD</div>
+							{/if}
+						</div>
+					</div>
+					<div></div>
+					<div></div>
+					<div></div>
+					<div class="flex items-center">
+						<div class="w-full max-w-[350px] mx-auto">
+							{#if bracket().qf[3]}
+<GameCard game={bracket().qf[3]} size="qf" />
+							{:else}
+								<div class="bg-surface border border-border border-dashed rounded-xl px-3 py-4 text-center text-[#555570] text-xs">TBD</div>
+							{/if}
+						</div>
+					</div>
+				</div>
+
+				<!-- SVG Connector Lines (Desktop Only) -->
+				<svg class="hidden lg:block absolute inset-0 w-full h-full pointer-events-none z-0">
+					<style>
+						.bracket-line {
+							stroke: #333348;
+							stroke-width: 2;
+							fill: none;
+						}
+					</style>
+
+					<!-- LEFT SIDE CONNECTORS -->
+					<path d="M 20% 97 L 30% 97 L 30% 195 L 40% 195" class="bracket-line" />
+					<path d="M 20% 293 L 30% 293 L 30% 195 L 40% 195" class="bracket-line" />
+
+					<!-- CENTER CONNECTORS -->
+					<path d="M 40% 195 L 60% 195" class="bracket-line" />
+
+					<!-- RIGHT SIDE CONNECTORS -->
+					<path d="M 80% 97 L 70% 97 L 70% 195 L 60% 195" class="bracket-line" />
+					<path d="M 80% 293 L 70% 293 L 70% 195 L 60% 195" class="bracket-line" />
+				</svg>
+			</div>
+		{:else}
+			<!-- Legacy Bracket layout for older seasons without QF -->
+			<div class="flex flex-col items-center gap-6">
+				<div class="w-full max-w-lg">
+					<p class="text-xs font-bold text-gold uppercase tracking-widest text-center mb-3">Championship</p>
+					{#if bracket().final}
+						<GameCard game={bracket().final} size="championship" />
+					{:else}
+						<div class="bg-surface border border-gold/20 border-dashed rounded-xl px-4 py-8 text-center text-[#555570] text-sm">TBD</div>
+					{/if}
+				</div>
+				<div class="w-px h-6 bg-border-light"></div>
+				<div class="w-full max-w-5xl">
+					<p class="text-xs font-bold text-[#a78bfa] uppercase tracking-widest text-center mb-3">Semifinals</p>
+					<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+						{#each Array(2) as _, idx}
+							{@const game = bracket().sf[idx]}
+							{#if game}
+								<GameCard {game} size="sf" />
+							{:else}
+								<div class="bg-surface border border-border border-dashed rounded-xl px-4 py-6 text-center text-[#555570] text-sm">TBD</div>
 							{/if}
 						{/each}
 					</div>
 				</div>
-			{/if}
-		</div>
+			</div>
+		{/if}
 	</section>
 
 	<!-- Pool Standings -->

@@ -1,4 +1,4 @@
-# ⚾ WBC Dashboard
+# ⚾ World Baseball Classic Data Platform + RAG AI Assistant
 
 A production-grade **data engineering + AI system** for exploring World Baseball Classic data through both a modern dashboard and a natural-language interface.
 
@@ -12,7 +12,7 @@ This project demonstrates an end-to-end data + AI platform that:
 
 - Builds a complete ELT pipeline (Python → PostgreSQL → dbt → Dagster)
 - Implements a **custom RAG pipeline** without frameworks like LangChain
-- Uses **pgvector (HNSW)** for high-recall semantic retrieval
+- Uses **pgvector** for high-recall semantic retrieval
 - Generates **grounded, streaming LLM responses** in real time
 - Deploys across **Vercel (frontend) + AWS EC2 (pipeline)**
 

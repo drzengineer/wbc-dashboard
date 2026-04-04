@@ -6,7 +6,7 @@
 </script>
 
 <div class="bg-surface border border-border rounded-xl overflow-hidden">
-	<div class="px-4 py-3 border-b border-border flex items-center gap-2">
+	<div class="px-4 py-3 border-b border-border flex items-center gap-2 flex justify-between">
 		<span class="text-sm font-semibold text-white">{poolName}</span>
 		<span class="text-xs text-[#555570]">{teams.length} teams</span>
 	</div>

@@ -25,7 +25,7 @@ function closeNav() {
 </script>
 
 <!-- Mobile header -->
-<header class="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-[#0a0a0f]/95 backdrop-blur-sm border-b border-border">
+<header class="xl:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-[#0a0a0f]/95 backdrop-blur-sm border-b border-border">
 	<div class="flex items-center gap-2">
 		<span class="text-lg font-bold tracking-tight text-white">WBC</span>
 		<span class="text-lg font-bold tracking-tight text-accent">Dashboard</span>
@@ -47,11 +47,11 @@ function closeNav() {
 <!-- Mobile drawer overlay -->
 {#if mobileNavOpen}
 	<div
-		class="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+		class="xl:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
 		onclick={closeNav}
 		role="presentation"
 	></div>
-	<nav class="md:hidden fixed top-13 left-0 bottom-0 z-40 w-56 bg-[#0a0a0f] border-r border-border flex flex-col py-4 px-3 gap-1 shadow-2xl animate-fade-in">
+	<nav class="xl:hidden fixed top-13 left-0 bottom-0 z-40 w-56 bg-[#0a0a0f] border-r border-border flex flex-col py-4 px-3 gap-1 shadow-2xl animate-fade-in">
 		{#each navLinks as link}
 			<a
 				href={link.href}
@@ -71,7 +71,7 @@ function closeNav() {
 <!-- Desktop layout -->
 <div class="flex min-h-screen bg-[#0a0a0f] text-[#f0f0f5]">
 	<!-- Desktop sidebar -->
-	<aside class="hidden md:flex w-56 shrink-0 border-r border-border flex-col py-6 px-3 gap-1 sticky top-0 h-screen">
+	<aside class="hidden xl:flex w-56 shrink-0 border-r border-border flex-col py-6 px-3 gap-1 sticky top-0 h-screen">
 		<div class="mb-6 px-3">
 			<span class="text-xl font-bold tracking-tight text-white">WBC</span>
 			<span class="text-xl font-bold tracking-tight text-accent"> Dashboard</span>
@@ -91,7 +91,7 @@ function closeNav() {
 	</aside>
 
 	<!-- Main content -->
-	<main class="flex-1 min-w-0 overflow-y-auto p-4 md:p-8 pt-17 md:pt-8">
+	<main class="flex-1 min-w-0 overflow-y-auto p-4 xl:p-8 pt-17 xl:pt-8">
 		{@render children()}
 	</main>
 </div>

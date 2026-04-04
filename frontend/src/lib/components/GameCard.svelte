@@ -61,14 +61,14 @@ const sizeClasses = $derived({
 });
 </script>
 
-<div class="bg-surface border rounded-xl py-0 transition-all duration-200 hover:border-[#3a3a4a] overflow-hidden
+<div class="bg-surface border rounded-xl py-0 transition-all duration-200 hover:border-[#3a3a4a] overflow-hidden @container
 	{isChamp ? 'border-gold/40 shadow-lg shadow-gold/5' : 'border-border'}
 	{sizeClasses[size]}">
 	
 	<!-- Top Header Row -->
-	<div class="flex items-center justify-between border-b border-border text-xs
+	<div class="flex items-center justify-center border-b border-border text-xs
 		{size === 'qf' ? 'px-4 py-2' : size === 'sf' ? 'px-5 py-2.5' : size === 'championship' ? 'px-6 py-3' : 'px-5 py-3'}">
-		<span class="text-[#8888a0] flex-1 text-left">
+		<span class="text-[#8888a0] flex-1 text-left @max-[420px]:hidden">
 			{showFullDate ? fmtDateFull(game.official_date) : fmtDate(game.official_date)}
 		</span>
 
@@ -77,7 +77,7 @@ const sizeClasses = $derived({
 		</span>
 
 		{#if game.venue_name}
-			<span class="text-[#555570] truncate flex-1 text-right">
+			<span class="text-[#555570] truncate flex-1 text-right @max-[420px]:hidden">
 				{game.venue_name}
 			</span>
 		{:else}
@@ -94,7 +94,7 @@ const sizeClasses = $derived({
 			<span class="text-sm font-semibold min-w-[52px] w-[52px] flex-shrink-0 {row.isWinner ? 'text-white' : 'text-[#8888a0]'}">
 				{row.abbr}
 			</span>
-			<span class="text-sm min-w-[120px] {row.isWinner ? 'text-[#ccccdd]' : 'text-[#777790]'}">
+			<span class="text-sm min-w-[120px] @max-[420px]:hidden {row.isWinner ? 'text-[#ccccdd]' : 'text-[#777790]'}">
 				{row.fullName ?? row.name ?? ''}
 			</span>
 		</div>

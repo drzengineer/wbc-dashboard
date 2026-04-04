@@ -1,6 +1,5 @@
 <script lang="ts">
-import { Target, TrendingUp, Trophy, Zap, Flame, Activity, Swords, Hash } from "lucide-svelte";
-import AnimatedCounter from "$lib/components/AnimatedCounter.svelte";
+import { Target, TrendingUp, Trophy, Zap, Flame, Activity, Swords, Hash, Rocket, Clock } from "lucide-svelte";
 import EmptyState from "$lib/components/EmptyState.svelte";
 import GameCard from "$lib/components/GameCard.svelte";
 import SeasonTabs from "$lib/components/SeasonTabs.svelte";
@@ -46,6 +45,16 @@ const highestScoringGame = $derived(
         const totalRuns = Number(g.away_score || 0) + Number(g.home_score || 0);
         return totalRuns > max ? totalRuns : max;
     }, 0)
+);
+
+const highestScoringGameObj = $derived(
+    seasonGames.length > 0 
+        ? seasonGames.reduce((max, g) => {
+            const currentTotal = Number(g.away_score || 0) + Number(g.home_score || 0);
+            const maxTotal = Number(max.away_score || 0) + Number(max.home_score || 0);
+            return currentTotal > maxTotal ? g : max;
+        }, seasonGames[0])
+        : null
 );
 
 const bestRunDiff = $derived(
@@ -122,40 +131,43 @@ const TBD_FINAL = { label: "TBD", classes: "bg-surface border border-gold/20 bor
     <SeasonTabs {seasons} selected={selectedSeason} onSelect={(s) => selectedSeason = s} />
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+
         <div class="bg-surface border border-border rounded-xl px-5 py-5 flex flex-col items-center justify-center hover:border-border-light transition-colors relative overflow-hidden">
-            <Flame class="w-4 h-4 text-accent absolute top-4 right-4 opacity-50" />
+            <Activity class="w-4 h-4 text-red-400 absolute top-4 right-4 opacity-50" />
+            <span class="text-xs text-[#8888a0] font-medium mb-1 uppercase tracking-wider">1-Run Games</span>
+            <span class="text-3xl font-bold text-red-400">{oneRunGames}</span>
+            <span class="text-xs text-red-400 mt-2 bg-red-400/10 px-2 py-0.5 rounded-full font-bold tracking-wide">Nailbiters</span>
+        </div>
+
+        <div class="bg-surface border border-border rounded-xl px-5 py-5 flex flex-col items-center justify-center hover:border-border-light transition-colors relative overflow-hidden">
+            <Flame class="w-4 h-4 text-green-400 absolute top-4 right-4 opacity-50" />
             <span class="text-xs text-[#8888a0] font-medium mb-1 uppercase tracking-wider">Best Run Diff</span>
-            <span class="text-3xl font-bold text-white">+{bestRunDiff?.pool_run_differential || 0}</span>
-            <span class="text-xs text-accent mt-1 bg-accent/10 px-2 py-0.5 rounded-full">
+            <span class="text-3xl font-bold text-green-400">+{bestRunDiff?.pool_run_differential || 0}</span>
+            <span class="text-xs text-green-400 mt-2 bg-green-400/10 px-2 py-0.5 rounded-full font-bold tracking-wide">
                 {bestRunDiff?.team_abbreviation || 'N/A'}
             </span>
         </div>
 
         <div class="bg-surface border border-border rounded-xl px-5 py-5 flex flex-col items-center justify-center hover:border-border-light transition-colors relative overflow-hidden">
-            <Activity class="w-4 h-4 text-blue-400 absolute top-4 right-4 opacity-50" />
-            <span class="text-xs text-[#8888a0] font-medium mb-1 uppercase tracking-wider">1-Run Games</span>
-            <AnimatedCounter value={oneRunGames} label="" />
-            <span class="text-xs text-[#555570] mt-1">Nailbiters</span>
+            <Rocket class="w-4 h-4 text-blue-400 absolute top-4 right-4 opacity-50" />
+            <span class="text-xs text-[#8888a0] font-medium mb-1 uppercase tracking-wider">Top-scoring game</span>
+            <span class="text-3xl font-bold text-blue-400">{highestScoringGame}</span>
+            <span class="text-xs text-blue-400 mt-2 bg-blue-400/10 px-2 py-0.5 rounded-full font-bold tracking-wide">
+                {highestScoringGameObj?.away_team_abbreviation || 'TBD'} vs {highestScoringGameObj?.home_team_abbreviation || 'TBD'}
+            </span>
         </div>
 
         <div class="bg-surface border border-border rounded-xl px-5 py-5 flex flex-col items-center justify-center hover:border-border-light transition-colors relative overflow-hidden">
-            <Swords class="w-4 h-4 text-purple-400 absolute top-4 right-4 opacity-50" />
-            <span class="text-xs text-[#8888a0] font-medium mb-1 uppercase tracking-wider">Most Runs (Game)</span>
-            <AnimatedCounter value={highestScoringGame} label="" />
-            <span class="text-xs text-[#555570] mt-1">Combined runs</span>
-        </div>
-
-        <div class="bg-surface border border-border rounded-xl px-5 py-5 flex flex-col items-center justify-center hover:border-border-light transition-colors relative overflow-hidden">
-            <Hash class="w-4 h-4 text-rose-400 absolute top-4 right-4 opacity-50" />
+            <Zap class="w-4 h-4 text-orange-400 absolute top-4 right-4 opacity-50" />
             <span class="text-xs text-[#8888a0] font-medium mb-1 uppercase tracking-wider">Mercy Rules</span>
-            <AnimatedCounter value={mercyRulesCount} label="" color="gold" />
-            <span class="text-xs text-rose-400 mt-1 bg-rose-400/10 px-2 py-0.5 rounded-full">Games ended early</span>
+            <span class="text-3xl font-bold text-orange-400">{mercyRulesCount}</span>
+            <span class="text-xs text-orange-400 mt-2 bg-orange-400/10 px-2 py-0.5 rounded-full font-bold tracking-wide">Finished Early</span>
         </div>
     </div>
 
     <section>
         <h2 class="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-            <Target class="w-5 h-5 text-accent" />
+            <Swords class="w-5 h-5 text-accent" />
             Knockout Bracket
         </h2>
 
@@ -321,29 +333,31 @@ const TBD_FINAL = { label: "TBD", classes: "bg-surface border border-gold/20 bor
         {/if}
     </section>
 
-    <section class="bg-surface border border-border rounded-xl p-5 max-w-2xl mx-auto">
-        <h3 class="text-sm font-semibold text-white mb-4">Top Scoring Teams</h3>
-        <div class="space-y-3">
-            {#each topOffenses as team}
-                <div class="flex items-center gap-3">
-                    <span class="w-10 text-sm font-medium text-[#8888a0]">{team.team_abbreviation}</span>
-                    <div class="flex-1 h-3 bg-black/20 rounded-full overflow-hidden">
-                        <div
-                            class="h-full bg-accent transition-all duration-1000 ease-out rounded-full"
-                            style="width: {(Number(team.pool_runs_scored) / maxRuns) * 100}%"
-                        ></div>
-                    </div>
-                    <span class="w-8 text-right text-sm font-bold text-white">{team.pool_runs_scored}</span>
-                </div>
-            {/each}
-        </div>
-    </section>
 
-    <section>
+    <section class="space-y-6">
         <h2 class="text-lg font-semibold text-white mb-6 flex items-center gap-2">
             <TrendingUp class="w-5 h-5 text-accent" />
             Pool Standings
         </h2>
+
+            <section class="bg-surface border border-border rounded-xl p-5 max-w-2xl mx-auto">
+                <h3 class="text-sm font-semibold text-white mb-4">Top Scoring Teams</h3>
+                <div class="space-y-3">
+                    {#each topOffenses as team}
+                        <div class="flex items-center gap-3">
+                            <span class="w-10 text-sm font-medium text-[#8888a0]">{team.team_abbreviation}</span>
+                            <div class="flex-1 h-3 bg-black/20 rounded-full overflow-hidden">
+                                <div
+                                    class="h-full bg-accent transition-all duration-1000 ease-out rounded-full"
+                                    style="width: {(Number(team.pool_runs_scored) / maxRuns) * 100}%"
+                                ></div>
+                            </div>
+                            <span class="w-8 text-right text-sm font-bold text-white">{team.pool_runs_scored}</span>
+                        </div>
+                    {/each}
+                </div>
+            </section>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-7xl mx-auto">
             {#each [...pools.entries()] as [poolName, teams]}
                 <PoolStandings {poolName} {teams} />
@@ -353,7 +367,7 @@ const TBD_FINAL = { label: "TBD", classes: "bg-surface border border-gold/20 bor
 
     <section>
         <h2 class="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-            <Zap class="w-5 h-5 text-accent" />
+            <Clock class="w-5 h-5 text-accent" />
             Recent Results
         </h2>
         {#if (data.recentGames as any[]).length === 0}

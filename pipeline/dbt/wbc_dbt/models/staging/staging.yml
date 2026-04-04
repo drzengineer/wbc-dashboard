@@ -3,10 +3,9 @@ version: 2
 models:
   - name: stg_schedule
     description: >
-      One row per game. Flattens raw.schedule JSON blobs into clean columns.
-      Source of truth for game metadata — dates, scores, teams, round, status.
-      Team abbreviations are joined from raw.games because raw.schedule team
-      objects only carry id/link/name.
+      One row per game. Pure 1:1 flattening of raw.schedule JSON blobs into clean columns.
+      No joins performed at this layer. Source of truth for game metadata — dates, scores, teams, round, status.
+      Team abbreviations are NOT present here — they come from stg_games and are joined in int_games.
     columns:
       - name: game_pk
         description: MLB Stats API primary key for a game. Globally unique across all seasons.
@@ -25,8 +24,7 @@ models:
         tests:
           - not_null
           - accepted_values:
-              arguments:
-                values: ['F', 'D', 'L', 'W']
+              values: ['F', 'D', 'L', 'W']
       - name: official_date
         description: Game date in ISO format (YYYY-MM-DD). From raw.schedule officialDate.
         tests:
@@ -42,8 +40,7 @@ models:
           tournament play and resolves to Final after the game ends.
         tests:
           - accepted_values:
-              arguments:
-                values: ['Final', 'Preview', 'Live']
+              values: ['Final', 'Preview', 'Live']
       - name: detailed_state
         description: >
           Granular game status. 'Final' = completed normally,
@@ -55,20 +52,12 @@ models:
           False for normally completed games. NULL for games not yet finished (Live/Preview).
       - name: away_team_name
         description: Full name of the away team (e.g. 'Japan', 'Cuba').
-      - name: away_team_abbreviation
-        description: >
-          Away team abbreviation (e.g. 'JPN', 'CUB'). Joined from raw.games —
-          not present in raw.schedule team objects.
       - name: away_team_id
         description: >
           MLB Stats API team ID for the away team (integer). May be NULL for
           placeholder teams (e.g. 'Semifinal 1 Winner') where no team ID exists yet.
       - name: home_team_name
         description: Full name of the home team.
-      - name: home_team_abbreviation
-        description: >
-          Home team abbreviation. Joined from raw.games —
-          not present in raw.schedule team objects.
       - name: home_team_id
         description: >
           MLB Stats API team ID for the home team (integer). May be NULL for
@@ -120,6 +109,48 @@ models:
         description: >
           Timestamp when this row was written to raw.schedule by the ingestion pipeline.
           Pipeline metadata — not used in downstream analytics models.
+
+  - name: stg_games
+    description: >
+      One row per game. Pure 1:1 flattening of raw.games boxscore JSON blobs into clean columns.
+      No joins performed at this layer. Source of truth for boxscore data, team abbreviations, hits, errors, LOB.
+    columns:
+      - name: game_pk
+        description: MLB Stats API primary key for a game. Globally unique across all seasons.
+        tests:
+          - not_null
+          - unique
+      - name: season
+        description: Tournament year (2006, 2009, 2013, 2017, 2023, 2026).
+        tests:
+          - not_null
+      - name: away_team_abbreviation
+        description: >
+          Away team abbreviation (e.g. 'JPN', 'CUB'). Sourced from raw.games —
+          not present in raw.schedule team objects.
+      - name: home_team_abbreviation
+        description: >
+          Home team abbreviation. Sourced from raw.games —
+          not present in raw.schedule team objects.
+      - name: away_runs
+        description: Total runs scored by the away team in this game.
+      - name: away_hits
+        description: Total hits for away team.
+      - name: away_errors
+        description: Total errors for away team.
+      - name: away_left_on_base
+        description: Total runners left on base for away team.
+      - name: home_runs
+        description: Total runs scored by the home team in this game.
+      - name: home_hits
+        description: Total hits for home team.
+      - name: home_errors
+        description: Total errors for home team.
+      - name: home_left_on_base
+        description: Total runners left on base for home team.
+      - name: ingested_at
+        description: >
+          Timestamp when this row was written to raw.games by the ingestion pipeline.
 
   - name: stg_players
     description: >
@@ -174,16 +205,14 @@ models:
         description: Batting handedness. L = left, R = right, S = switch.
         tests:
           - accepted_values:
-              arguments:
-                values: ['L', 'R', 'S']
+              values: ['L', 'R', 'S']
               config:
                 where: "bat_side is not null"
       - name: pitch_hand
         description: Throwing hand. L = left, R = right, S = switch (ambidextrous pitcher).
         tests:
           - accepted_values:
-              arguments:
-                values: ['L', 'R', 'S']
+              values: ['L', 'R', 'S']
               config:
                 where: "pitch_hand is not null"
       - name: position_abbreviation
@@ -236,8 +265,7 @@ models:
         tests:
           - not_null
           - accepted_values:
-              arguments:
-                values: ['home', 'away']
+              values: ['home', 'away']
       - name: team_abbreviation
         description: >
           Abbreviation of the team this player appeared for (e.g. 'JPN', 'USA').

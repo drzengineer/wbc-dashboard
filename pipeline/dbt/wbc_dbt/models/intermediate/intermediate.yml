@@ -1,0 +1,52 @@
+version: 2
+
+models:
+  - name: int_games
+    description: >
+      SINGLE SOURCE OF TRUTH FOR ALL GAME DATA.
+
+      This is the ONLY model that joins schedule and boxscore data. All downstream
+      analytics models select only from this table, never directly from staging or raw.
+
+      Provides clean, normalized, joined game data with all fields from both sources.
+      100% backwards compatible with all existing field names.
+
+      Lineage:
+        raw.schedule → stg_schedule ↘
+                               int_games
+        raw.games    → stg_games    ↗
+    columns:
+      - name: game_pk
+        description: MLB Stats API primary key. Globally unique.
+        tests:
+          - not_null
+          - unique
+
+      - name: season
+        description: Tournament year
+        tests:
+          - not_null
+
+      - name: away_team_abbreviation
+        description: Away team 3 letter code from boxscore
+
+      - name: home_team_abbreviation
+        description: Home team 3 letter code from boxscore
+
+      - name: away_hits
+        description: Total hits for away team
+
+      - name: away_errors
+        description: Total errors for away team
+
+      - name: away_left_on_base
+        description: Total runners left on base for away team
+
+      - name: home_hits
+        description: Total hits for home team
+
+      - name: home_errors
+        description: Total errors for home team
+
+      - name: home_left_on_base
+        description: Total runners left on base for home team

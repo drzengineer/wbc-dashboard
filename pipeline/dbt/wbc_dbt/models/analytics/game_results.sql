@@ -20,7 +20,7 @@
 -- ============================================================
 
 with base as (
-    select * from {{ ref('stg_schedule') }}
+    select * from {{ ref('int_games') }}
 )
 
 select
@@ -93,6 +93,14 @@ select
     -- scores (NULL on unplayed games — absent in API, not zero)
     away_score,
     home_score,
+
+    -- Boxscore summary totals (new! from int_games)
+    away_hits,
+    away_errors,
+    away_left_on_base,
+    home_hits,
+    home_errors,
+    home_left_on_base,
 
     -- winner flags (NULL on unplayed games)
     away_is_winner,

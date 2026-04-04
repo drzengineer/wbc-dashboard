@@ -3,70 +3,55 @@ with source as (
     from {{ source('raw', 'schedule') }}
 ),
 
--- raw.schedule team objects only contain id/link/name — no abbreviation field
--- abbreviation is only available in raw.games boxscore team objects, so we join to get it
--- left join ensures scheduled future games with no boxscore yet still appear (with null abbrev)
-game_abbrevs as (
-    select
-        game_pk,
-        data->'teams'->'away'->'team'->>'abbreviation'  as away_team_abbreviation,
-        data->'teams'->'home'->'team'->>'abbreviation'  as home_team_abbreviation
-    from {{ source('raw', 'games') }}
-),
-
 flattened as (
     select
-        s.game_pk,
-        (s.data->>'season')::int                                        as season,
-        s.data->>'gameType'                                             as game_type,
-        (s.data->>'officialDate')::date                                 as official_date,
-        s.data->>'dayNight'                                             as day_night,
-        s.data->'status'->>'abstractGameState'                          as abstract_game_state,
-        s.data->'status'->>'detailedState'                              as detailed_state,
+        game_pk,
+        (data->>'season')::int                                        as season,
+        data->>'gameType'                                             as game_type,
+        (data->>'officialDate')::date                                 as official_date,
+        data->>'dayNight'                                             as day_night,
+        data->'status'->>'abstractGameState'                          as abstract_game_state,
+        data->'status'->>'detailedState'                              as detailed_state,
         case
-            when s.data->'status'->>'detailedState' = 'Completed Early' then true
-            when s.data->'status'->>'detailedState' = 'Final'           then false
+            when data->'status'->>'detailedState' = 'Completed Early' then true
+            when data->'status'->>'detailedState' = 'Final'           then false
             -- null for Live or Preview — game has not concluded, mercy rule unknown
             else null
         end                                                             as is_mercy_rule,
-        s.data->'teams'->'away'->'team'->>'name'                        as away_team_name,
-        -- abbreviation sourced from raw.games, not raw.schedule (schedule blob lacks this field)
-        g.away_team_abbreviation,
-        nullif(s.data->'teams'->'away'->'team'->>'id', '')::int          as away_team_id,
-        s.data->'teams'->'home'->'team'->>'name'                        as home_team_name,
-        g.home_team_abbreviation,
-        nullif(s.data->'teams'->'home'->'team'->>'id', '')::int          as home_team_id,
-        nullif(s.data->'teams'->'away'->>'score', '')::int              as away_score,
-        nullif(s.data->'teams'->'home'->>'score', '')::int              as home_score,
+        data->'teams'->'away'->'team'->>'name'                        as away_team_name,
+        nullif(data->'teams'->'away'->'team'->>'id', '')::int          as away_team_id,
+        data->'teams'->'home'->'team'->>'name'                        as home_team_name,
+        nullif(data->'teams'->'home'->'team'->>'id', '')::int          as home_team_id,
+        nullif(data->'teams'->'away'->>'score', '')::int              as away_score,
+        nullif(data->'teams'->'home'->>'score', '')::int              as home_score,
         case
-            when s.data->'teams'->'away'->>'isWinner' = 'true'  then true
-            when s.data->'teams'->'away'->>'isWinner' = 'false' then false
+            when data->'teams'->'away'->>'isWinner' = 'true'  then true
+            when data->'teams'->'away'->>'isWinner' = 'false' then false
             else null
         end                                                             as away_is_winner,
         case
-            when s.data->'teams'->'home'->>'isWinner' = 'true'  then true
-            when s.data->'teams'->'home'->>'isWinner' = 'false' then false
+            when data->'teams'->'home'->>'isWinner' = 'true'  then true
+            when data->'teams'->'home'->>'isWinner' = 'false' then false
             else null
         end                                                             as home_is_winner,
-        s.data->'venue'->>'name'                                        as venue_name,
-        s.data->>'description'                                          as description,
-        s.data->>'seriesDescription'                                    as series_description,
-        s.data->>'ifNecessary'                                          as if_necessary,
+        data->'venue'->>'name'                                        as venue_name,
+        data->>'description'                                          as description,
+        data->>'seriesDescription'                                    as series_description,
+        data->>'ifNecessary'                                          as if_necessary,
         case
-            when s.data->'teams'->'away'->'team'->>'placeholder' = 'true'  then true
-            when s.data->'teams'->'away'->'team'->>'placeholder' = 'false' then false
+            when data->'teams'->'away'->'team'->>'placeholder' = 'true'  then true
+            when data->'teams'->'away'->'team'->>'placeholder' = 'false' then false
             -- null when placeholder key absent (normal completed games)
             else null
         end                                                             as away_team_is_placeholder,
         case
-            when s.data->'teams'->'home'->'team'->>'placeholder' = 'true'  then true
-            when s.data->'teams'->'home'->'team'->>'placeholder' = 'false' then false
+            when data->'teams'->'home'->'team'->>'placeholder' = 'true'  then true
+            when data->'teams'->'home'->'team'->>'placeholder' = 'false' then false
             -- null when placeholder key absent (normal completed games)
             else null
         end                                                             as home_team_is_placeholder,
-        s.ingested_at
-    from source s
-    left join game_abbrevs g on s.game_pk = g.game_pk
+        ingested_at
+    from source
 )
 
 select * from flattened

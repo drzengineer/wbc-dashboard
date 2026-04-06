@@ -57,6 +57,9 @@ models:
       - name: tiebreaker
         description: Whether this game was a tiebreaker.
 
+      - name: status_code
+        description: whether this game was complete and if a mercy game (F or FM)
+
       - name: venue_id
         description: Identifier for the venue.
 
@@ -127,15 +130,6 @@ models:
 
       - name: score
         description: Final score for this team.
-
-      - name: wins
-        description: This team's win total as of this game.
-
-      - name: losses
-        description: This team's loss total as of this game.
-
-      - name: win_pct
-        description: This team's winning percentage as of this game, cast to numeric.
 
       - name: hits
         description: Total hits from the schedule box score line. Must equal batting_hits.

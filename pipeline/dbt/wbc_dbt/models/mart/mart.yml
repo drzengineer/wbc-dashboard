@@ -49,12 +49,6 @@ models:
         description: The opponent's final score.
       - name: run_differential
         description: score minus opponent_score. Positive = win margin, negative = loss margin.
-      - name: wins
-        description: This team's win total as of this game.
-      - name: losses
-        description: This team's loss total as of this game.
-      - name: win_pct
-        description: This team's winning percentage as of this game.
       - name: hits
         description: Total hits from the schedule box score line.
       - name: runs
@@ -152,13 +146,25 @@ models:
         tests:
           - not_null
 
+      - name: total_runs
+        description: Total runs scored in the game (sum of both team scores).
+
+      - name: run_margin
+        description: Absolute difference between winning and losing team score.
+
+      - name: is_one_run_game
+        description: True if the game was decided by exactly 1 run.
+
+      - name: is_mercy_rule
+        description: True if the game ended early, status_code derived (FM = mercy)
+
   - name: fct_player_game_stats
     description: >
       One row per player per game. Keys and measures only — no dimension attributes.
       All descriptive context (player name, position, team name, game date) is
       joined in at the agg layer. Source is int_wbc__game_players exclusively.
-      Season snapshot stats excluded — tournament totals are computed fresh
-      in agg_player_tournament_stats from these raw game counts.
+      Season snapshot stats excluded — tournament totals are to be computed fresh
+      in agg files from these raw game counts.
       Grain: game_pk + player_id.
     columns:
       - name: game_player_id
@@ -353,181 +359,3 @@ models:
         description: Timestamp when the row was ingested.
         tests:
           - not_null
-
-# =============================================================================
-# AGGREGATE TABLES
-# =============================================================================
-# Pre-computed tournament-level summaries built on top of fact tables.
-# This is the first place in the lineage where dim attributes are joined in.
-# Rate stats (AVG, ERA, WHIP, OBP, SLG, etc.) are computed here from
-# summed counts — never on the fact tables.
-
-  - name: agg_team_tournament_stats
-    description: >
-      One row per team per tournament (season + pool). Sums all counting stats
-      from fct_team_game_stats and computes rates from those totals.
-      Dim attributes (team name, division, etc.) are joined here for the first
-      time in the mart lineage.
-      Primary table for team leaderboards, standings, and comparison views.
-      Grain: team_id + season + pool.
-    columns:
-      - name: team_tournament_id
-        description: Surrogate primary key. Hash of team_id, season, and pool.
-        tests:
-          - unique
-          - not_null
-      - name: team_id
-        description: Foreign key to dim_teams.
-        tests:
-          - not_null
-      - name: season
-        description: Season (tournament year).
-        tests:
-          - not_null
-      - name: pool
-        description: Pool description (e.g. "Pool A, Tokyo Dome").
-      - name: team_name
-        description: Full team name. Joined from dim_teams.
-      - name: team_abbreviation
-        description: Team abbreviation. Joined from dim_teams.
-      - name: division_id
-        description: Division (pool) ID. Joined from dim_teams.
-      - name: division_name
-        description: Division (pool) name. Joined from dim_teams.
-      - name: league_name
-        description: League name. Joined from dim_teams.
-      - name: games_played
-        description: Total games played in this pool and season.
-      - name: wins
-        description: Total wins.
-      - name: losses
-        description: Total losses.
-      - name: win_pct
-        description: Derived win percentage (wins / games_played).
-      - name: total_runs_scored
-        description: Total runs scored across all games.
-      - name: total_runs_allowed
-        description: Total runs allowed across all games.
-      - name: total_run_differential
-        description: Total runs scored minus total runs allowed.
-      - name: innings_pitched
-        description: Total innings pitched in baseball convention (e.g. 4.2 = 4 innings + 2 outs).
-      - name: batting_avg
-        description: Derived AVG from tournament totals. hits / at_bats.
-      - name: on_base_pct
-        description: Derived OBP. (H+BB+HBP) / (AB+BB+HBP+SF).
-      - name: slugging_pct
-        description: Derived SLG. total_bases / at_bats.
-      - name: ops
-        description: Derived OPS. OBP + SLG from tournament totals.
-      - name: stolen_base_pct
-        description: Derived SB%. stolen_bases / (stolen_bases + caught_stealing).
-      - name: era
-        description: Derived ERA. earned_runs * 27 / pitching_outs. Null when outs = 0.
-      - name: whip
-        description: Derived WHIP. (walks + hits) * 3 / pitching_outs. Null when outs = 0.
-      - name: strike_pct
-        description: Derived strike percentage. strikes / total_pitches.
-      - name: k_rate
-        description: Derived strikeout rate. strikeouts / batters_faced.
-      - name: bb_rate
-        description: Derived walk rate. walks / batters_faced.
-      - name: fielding_pct
-        description: Derived fielding percentage. (put_outs + assists) / chances.
-
-  - name: agg_player_tournament_stats
-    description: >
-      One row per player per tournament (season + pool). Sums all counting stats
-      from fct_player_game_stats and computes rates from those totals.
-      Dim attributes (player name, position, team name, etc.) are joined here
-      for the first time in the mart lineage.
-      Season snapshot stats from the source API are excluded — all stats here
-      are WBC-specific and computed from raw game-level counts.
-      Primary table for player leaderboards, stat leaders, and roster views.
-      Grain: player_id + team_id + season + pool.
-    columns:
-      - name: player_tournament_id
-        description: Surrogate primary key. Hash of player_id, team_id, season, and pool.
-        tests:
-          - unique
-          - not_null
-      - name: player_id
-        description: Foreign key to dim_players.
-        tests:
-          - not_null
-      - name: team_id
-        description: Foreign key to dim_teams.
-        tests:
-          - not_null
-      - name: season
-        description: Season (tournament year).
-        tests:
-          - not_null
-      - name: pool
-        description: Pool description.
-      - name: full_name
-        description: Player full name. Joined from dim_players.
-      - name: boxscore_name
-        description: Boxscore name. Joined from dim_players.
-      - name: primary_position_code
-        description: Primary position code. Joined from dim_players.
-      - name: primary_position_name
-        description: Primary position name. Joined from dim_players.
-      - name: primary_position_type
-        description: Primary position type. Joined from dim_players.
-      - name: primary_position_abbreviation
-        description: Primary position abbreviation. Joined from dim_players.
-      - name: bat_side_code
-        description: Batting side code. Joined from dim_players.
-      - name: pitch_hand_code
-        description: Pitching hand code. Joined from dim_players.
-      - name: birth_country
-        description: Birth country. Joined from dim_players.
-      - name: team_name
-        description: Team name. Joined from dim_teams.
-      - name: team_abbreviation
-        description: Team abbreviation. Joined from dim_teams.
-      - name: division_id
-        description: Division (pool) ID. Joined from dim_teams.
-      - name: division_name
-        description: Division (pool) name. Joined from dim_teams.
-      - name: league_name
-        description: League name. Joined from dim_teams.
-      - name: is_pitcher
-        description: True if the player started as pitcher in any game this tournament.
-      - name: has_started
-        description: True if the player started at least one game.
-      - name: games_played
-        description: Number of distinct games the player appeared in.
-      - name: games_started
-        description: Games where the player was not a bench player or substitute.
-      - name: games_started_pitching
-        description: Games where the player was the starting pitcher.
-      - name: innings_pitched
-        description: Total innings pitched in baseball convention. Null for non-pitchers.
-      - name: batting_avg
-        description: Derived AVG from tournament totals. Null when at_bats = 0.
-      - name: on_base_pct
-        description: Derived OBP. Null when denominator = 0.
-      - name: slugging_pct
-        description: Derived SLG. Null when at_bats = 0.
-      - name: ops
-        description: Derived OPS from tournament totals. Null when denominators = 0.
-      - name: stolen_base_pct
-        description: Derived SB%. Null when (SB + CS) = 0.
-      - name: batting_k_rate
-        description: Batting strikeout rate per plate appearance.
-      - name: batting_bb_rate
-        description: Batting walk rate per plate appearance.
-      - name: era
-        description: Derived ERA. Null for non-pitchers or when outs = 0.
-      - name: whip
-        description: Derived WHIP. Null for non-pitchers or when outs = 0.
-      - name: strike_pct
-        description: Pitching strike percentage. Null for non-pitchers.
-      - name: k_rate
-        description: Pitching strikeout rate per batter faced. Null for non-pitchers.
-      - name: bb_rate
-        description: Pitching walk rate per batter faced. Null for non-pitchers.
-      - name: fielding_pct
-        description: Derived fielding percentage. Null when chances = 0.

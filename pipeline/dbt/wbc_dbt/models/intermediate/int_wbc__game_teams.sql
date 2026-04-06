@@ -24,10 +24,7 @@ schedule_unpivoted as (
         away_runs                                                   as runs,
         away_errors                                                 as errors,
         away_left_on_base                                           as left_on_base,
-        away_is_winner                                             as is_winner,
-        away_wins                                                   as wins,
-        away_losses                                                 as losses,
-        trim(both '"' from away_win_pct)::numeric                  as win_pct
+        away_is_winner                                             as is_winner
     from schedule
 
     union all
@@ -43,10 +40,7 @@ schedule_unpivoted as (
         home_runs                                                   as runs,
         home_errors                                                 as errors,
         home_left_on_base                                           as left_on_base,
-        home_is_winner                                             as is_winner,
-        home_wins                                                   as wins,
-        home_losses                                                 as losses,
-        trim(both '"' from home_win_pct)::numeric                  as win_pct
+        home_is_winner                                             as is_winner
     from schedule
 
 ),
@@ -208,9 +202,6 @@ final as (
         -- game result
         s.is_winner,
         s.score,
-        s.wins,
-        s.losses,
-        s.win_pct,
 
         -- box score line
         s.hits,

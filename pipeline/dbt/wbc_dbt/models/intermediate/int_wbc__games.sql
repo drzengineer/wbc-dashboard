@@ -33,6 +33,7 @@ final as (
         trim(both '"' from double_header)                      as double_header,
         trim(both '"' from if_necessary)                       as if_necessary,
         trim(both '"' from tiebreaker)                         as tiebreaker,
+        trim(both '"' from status_code)                         as status_code,
 
         -- metadata
         ingested_at

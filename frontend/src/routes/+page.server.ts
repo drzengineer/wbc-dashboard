@@ -2,39 +2,55 @@ import { supabase } from "$lib/server/db";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async () => {
-    const [{ data: standings }, { data: recentGames }, { data: knockoutGames }, { data: allGames }] =
-        await Promise.all([
-            supabase
-                .from("standings")
-                .select("*")
-                .order("season", { ascending: false })
-                .order("pool_win_pct", { ascending: false }),
+    console.log('🔍 Loading main page data...');
 
-            supabase
-                .from("game_results")
-                .select("*")
-                .eq("abstract_game_state", "Final")
-                .order("official_date", { ascending: false })
-                .limit(10),
+    // Get all unique seasons
+    const { data: seasons, error } = await supabase
+        .from("dim_games")
+        .select("season")
+        .order("season", { ascending: false });
 
-            supabase
-                .from("game_results")
-                .select("*")
-                .in("game_type", ["D", "L", "W"])
-                .eq("abstract_game_state", "Final")
-                .order("season", { ascending: false })
-                .order("official_date", { ascending: true }),
-            
-            // Needed for the dashboard stats (mercy rules, one-run games)
-            supabase
-                .from("game_results")
-                .select("*")
-        ]);
+    const uniqueSeasons = [...new Set(seasons?.map(s => s.season))].filter(Boolean);
+    console.log('✅ Unique seasons loaded:', uniqueSeasons);
+
+    // Game summary stats directly from dim_games - all pre-calculated flags
+    const { data: gameStats, error: statsError } = await supabase
+        .from("dim_games")
+        .select(`
+            game_pk,
+            season,
+            pool,
+            is_one_run_game,
+            is_mercy_rule,
+            run_margin,
+            total_runs
+        `)
+        .order("official_date", { ascending: false });
+
+    if (statsError) {
+        console.error('❌ Error loading game stats:', statsError);
+    }
+
+    // Calculate aggregate metrics
+    const totalGames = gameStats?.length || 0;
+    const oneRunGames = gameStats?.filter(g => g.is_one_run_game).length || 0;
+    const mercyRuleGames = gameStats?.filter(g => g.is_mercy_rule).length || 0;
+
+    console.log(`✅ Game stats loaded: ${totalGames} total, ${oneRunGames} 1-run, ${mercyRuleGames} mercy rule`);
 
     return {
-        standings: standings ?? [],
-        recentGames: recentGames ?? [],
-        knockoutGames: knockoutGames ?? [],
-        gameResults: allGames ?? []
+        seasons: uniqueSeasons,
+        games: gameStats || [],
+        summary: {
+            totalGames,
+            oneRunGames,
+            mercyRuleGames,
+            oneRunPercentage: totalGames > 0 ? Math.round((oneRunGames / totalGames) * 100) : 0,
+            mercyRulePercentage: totalGames > 0 ? Math.round((mercyRuleGames / totalGames) * 100) : 0
+        },
+        teamStats: [],
+        recentGames: [],
+        knockoutGames: [],
+        gameResults: []
     };
 };

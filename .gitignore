@@ -17,3 +17,7 @@ Thumbs.db
 
 # context doc for AI
 wbc_master_reference.md
+MLB-STATSAPI-ENDPOINTS.md
+boxscores_schema_table.md
+players_schema_table.md
+schedule_schema_table.md

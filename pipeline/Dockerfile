@@ -18,6 +18,9 @@ COPY ingestion/      ./ingestion/
 COPY dbt/            ./dbt/
 COPY dagster/        ./dagster/
 
+# Install dbt package dependencies
+RUN cd /app/dbt/wbc_dbt && dbt deps
+
 # Copy the entrypoint script
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

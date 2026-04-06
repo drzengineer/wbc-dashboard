@@ -1,13 +1,13 @@
 version: 2
 
 sources:
-  - name: raw
-    schema: raw
+  - name: wbc_raw
+    schema: wbc_raw
     description: "Raw data landed by the MLB Stats API ingestion pipeline."
     tables:
-      - name: games
+      - name: raw_wbc__boxscores
         description: "Raw boxscore blobs from the MLB Stats API. One row per game_pk."
-      - name: players
+      - name: raw_wbc__players
         description: "Raw player objects from /api/v1/sports/51/players. One row per player_id."
-      - name: schedule
+      - name: raw_wbc__schedule
         description: "Raw schedule game objects from the MLB Stats API. One row per game_pk."

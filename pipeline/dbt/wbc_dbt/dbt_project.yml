@@ -14,11 +14,51 @@ snapshot-paths: ["snapshots"]
 target-path: "target"
 clean-targets: ["target", "dbt_packages"]
 
+# ------------------------------------------------------------------------------
+# LAYER ARCHITECTURE
+#
+#   raw          → source tables managed by ingestion tool (Fivetran / Airbyte)
+#                  Not managed by dbt. Defined in sources.yml only.
+#
+#   staging      → schema: wbc_staging
+#                  1:1 with raw sources. Type casting, renaming, null safety only.
+#                  Materialized as views — cheap, always fresh, never queried by BI.
+#
+#   intermediate → schema: wbc_intermediate
+#                  Business logic, joins, unnesting JSON arrays, derived fields.
+#                  Materialized as views — no storage cost, rebuilds on demand.
+#                  No mart or metric model should ever ref() a staging model.
+#
+#   marts        → schema: wbc_marts
+#                  Fact and dimension tables for BI consumption.
+#                  Materialized as tables — fast query performance for dashboards.
+#                  Named fct_wbc__* and dim_wbc__*
+#
+#   metrics      → schema: wbc_metrics  (future — dbt MetricFlow / semantic layer)
+#                  Defined metrics: batting_avg, era, tournament_ops, etc.
+#                  Single source of truth for KPIs consumed by all BI tools.
+#
+# ------------------------------------------------------------------------------
+
 models:
   wbc_dbt:
+
     staging:
-      +schema: analytics
+      +schema: wbc_staging
       +materialized: view
-    analytics:
-      +schema: analytics
+      +tags: ['staging']
+
+    intermediate:
+      +schema: wbc_intermediate
+      +materialized: view
+      +tags: ['intermediate']
+      
+    mart:
+      +schema: wbc_mart
       +materialized: table
+      +tags: ['mart']
+
+    # Uncomment when MetricFlow metrics are added
+    # metrics:
+    #   +schema: wbc_metrics
+    #   +tags: ['metrics']

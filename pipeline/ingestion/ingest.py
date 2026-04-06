@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 """
 WBC Dashboard - Ingestion Pipeline
-Single-file Python script to ingest MLB Stats API data into Supabase raw schema.
+Single-file Python script to ingest MLB Stats API data into Supabase wbc_raw schema.
 
 Flow:
 1. Load .env.local from repo root → Connect to Supabase (SSL required)
-2. Ingest players: /api/v1/sports/51/players → raw.players
-3. Ingest schedule + games per season:
-   - Schedule API → raw.schedule (full game objects: status, scores, dates, gameType etc)
-   - Boxscore API → raw.games (full boxscore blobs, gamePk + season injected only)
+2. Ingest players: /api/v1/sports/51/players → wbc_raw.raw_wbc__players
+3. Ingest schedule + boxscores per season:
+   - Schedule API → wbc_raw.raw_wbc__schedule (full game objects: status, scores, dates, gameType etc)
+   - Boxscore API → wbc_raw.raw_wbc__boxscores (full boxscore blobs, gamePk + season injected only)
 4. Smart skip: completed seasons skipped on rerun, current season always refreshed
 
-raw.schedule and raw.games are joined in dbt on gamePk to produce analytics tables.
+wbc_raw.raw_wbc__schedule and wbc_raw.raw_wbc__boxscores are joined in dbt on gamePk to produce analytics tables.
 
 Usage:
   python ingest.py --verify          # Check existing data counts/shapes
   python ingest.py --players-only    # Just players (fast, ~2s)
-  python ingest.py --games-only      # Just games + schedule (~3min first run)
+  python ingest.py --games-only      # Just boxscores + schedule (~3min first run)
   python ingest.py                   # Full pipeline
 """
 
@@ -86,7 +86,7 @@ def get_db_connection(cfg: Dict[str, str]) -> psycopg.Connection:
             sslmode="require",
             autocommit=True,
         )
-        print("INFO: Connected to Supabase ✓")
+        print("INFO: Connected to Supabase ")
         return conn
     except Exception as e:
         print(f"ERROR: Database connection failed: {e}")
@@ -155,7 +155,7 @@ def upsert_players(conn: psycopg.Connection, players: List[Dict[str, Any]]):
         print(f"WARNING: Skipped {skipped} players with missing ID")
 
     sql = """
-        INSERT INTO raw.players (player_id, data)
+        INSERT INTO wbc_raw.raw_wbc__players (player_id, data)
         VALUES (%s, %s)
         ON CONFLICT (player_id) DO UPDATE SET
             data        = EXCLUDED.data,
@@ -164,7 +164,7 @@ def upsert_players(conn: psycopg.Connection, players: List[Dict[str, Any]]):
     with conn.cursor() as cur:
         cur.executemany(sql, rows)
 
-    print(f"INFO: Upserted {len(rows):,} players into raw.players")
+    print(f"INFO: Upserted {len(rows):,} players into wbc_raw.raw_wbc__players")
 
 
 def ingest_players(conn: psycopg.Connection):
@@ -187,7 +187,7 @@ def fetch_schedule_for_season(season: int) -> List[Dict[str, Any]]:
     """
     data = get_with_retry(
         f"{MLB_API_BASE}/api/v1/schedule",
-        params={"sportId": 51, "season": season, "gameType": "F,D,L,W"},
+        params={"sportId": 51, "season": season, "gameType": "F,D,L,W", "hydrate": "linescore"},
     )
     if not data:
         return []
@@ -204,9 +204,9 @@ def fetch_schedule_for_season(season: int) -> List[Dict[str, Any]]:
 
 def upsert_schedule(conn: psycopg.Connection, schedule_games: List[Dict[str, Any]], season: int):
     """
-    Upsert schedule game objects into raw.schedule.
+    Upsert schedule game objects into wbc_raw.raw_wbc__schedule.
     One row per gamePk — stores the full schedule API game object as-is.
-    dbt joins this to raw.games on gamePk to enrich analytics tables.
+    dbt joins this to wbc_raw.raw_wbc__boxscores on gamePk to enrich analytics tables.
     """
     if not schedule_games:
         print(f"  No schedule data to upsert for {season}")
@@ -225,7 +225,7 @@ def upsert_schedule(conn: psycopg.Connection, schedule_games: List[Dict[str, Any
         print(f"  WARNING: Skipped {skipped} schedule entries missing gamePk")
 
     sql = """
-        INSERT INTO raw.schedule (game_pk, data)
+        INSERT INTO wbc_raw.raw_wbc__schedule (game_pk, data)
         VALUES (%s, %s)
         ON CONFLICT (game_pk) DO UPDATE SET
             data        = EXCLUDED.data,
@@ -234,29 +234,29 @@ def upsert_schedule(conn: psycopg.Connection, schedule_games: List[Dict[str, Any
     with conn.cursor() as cur:
         cur.executemany(sql, rows)
 
-    print(f"  Upserted {len(rows)} schedule entries into raw.schedule ✓")
+    print(f"  Upserted {len(rows)} schedule entries into wbc_raw.raw_wbc__schedule")
 
 
 def get_ingested_schedule_seasons(conn: psycopg.Connection) -> set:
-    """Return set of seasons already in raw.schedule (excludes current season)."""
+    """Return set of seasons already in wbc_raw.raw_wbc__schedule (excludes current season)."""
     with conn.cursor() as cur:
         cur.execute("""
             SELECT DISTINCT data->>'season'
-            FROM raw.schedule
+            FROM wbc_raw.raw_wbc__schedule
             WHERE (data->>'season')::int != %s
         """, (CURRENT_SEASON,))
         return {row[0] for row in cur.fetchall()}
 
 # =============================================================================
-# GAME (BOXSCORE) INGESTION
+# BOXSCORE INGESTION
 # =============================================================================
 
 def get_ingested_seasons(conn: psycopg.Connection) -> set:
-    """Return set of seasons already fully ingested into raw.games (excludes current season)."""
+    """Return set of seasons already fully ingested into wbc_raw.raw_wbc__boxscores (excludes current season)."""
     with conn.cursor() as cur:
         cur.execute("""
             SELECT DISTINCT data->>'season'
-            FROM raw.games
+            FROM wbc_raw.raw_wbc__boxscores
             WHERE (data->>'season')::int != %s
         """, (CURRENT_SEASON,))
         return {row[0] for row in cur.fetchall()}
@@ -269,7 +269,7 @@ def fetch_boxscores_for_season(
     """
     Fetch all boxscores for a season.
     Injects gamePk and season at root — these are the only fields injected.
-    All other enrichment (dates, status, gameType, scores) lives in raw.schedule
+    All other enrichment (dates, status, gameType, scores) lives in wbc_raw.raw_wbc__schedule
     and is joined by dbt, not here.
     """
     boxscores = []
@@ -287,15 +287,15 @@ def fetch_boxscores_for_season(
     return boxscores
 
 
-def upsert_games(conn: psycopg.Connection, games: List[Dict[str, Any]], season: int):
+def upsert_boxscores(conn: psycopg.Connection, boxscores: List[Dict[str, Any]], season: int):
     """Upsert all boxscores for a season in a single executemany call."""
-    if not games:
-        print(f"  No games to upsert for {season}")
+    if not boxscores:
+        print(f"  No boxscores to upsert for {season}")
         return
 
     rows = []
     skipped = 0
-    for game in games:
+    for game in boxscores:
         game_pk = game.get("gamePk")
         if game_pk is None:
             skipped += 1
@@ -303,10 +303,10 @@ def upsert_games(conn: psycopg.Connection, games: List[Dict[str, Any]], season: 
         rows.append((int(game_pk), json.dumps(game)))
 
     if skipped:
-        print(f"  WARNING: Skipped {skipped} games missing gamePk")
+        print(f"  WARNING: Skipped {skipped} boxscores missing gamePk")
 
     sql = """
-        INSERT INTO raw.games (game_pk, data)
+        INSERT INTO wbc_raw.raw_wbc__boxscores (game_pk, data)
         VALUES (%s, %s)
         ON CONFLICT (game_pk) DO UPDATE SET
             data        = EXCLUDED.data,
@@ -315,7 +315,7 @@ def upsert_games(conn: psycopg.Connection, games: List[Dict[str, Any]], season: 
     with conn.cursor() as cur:
         cur.executemany(sql, rows)
 
-    print(f"  Upserted {len(rows)} games into raw.games ✓")
+    print(f"  Upserted {len(rows)} boxscores into wbc_raw.raw_wbc__boxscores ")
 
 # =============================================================================
 # COMBINED SEASON INGESTION
@@ -323,20 +323,20 @@ def upsert_games(conn: psycopg.Connection, games: List[Dict[str, Any]], season: 
 
 def ingest_games(conn: psycopg.Connection):
     """
-    Per season: fetch schedule → upsert raw.schedule → fetch boxscores → upsert raw.games.
+    Per season: fetch schedule → upsert wbc_raw.raw_wbc__schedule → fetch boxscores → upsert wbc_raw.raw_wbc__boxscores.
     One schedule API call per season feeds both tables.
     Smart skip: historical seasons skipped if already in both tables.
     Current season always re-fetched (live tournament, scores/status may have changed).
     """
     print("\n" + "=" * 60)
-    print("INGESTING SCHEDULE + GAMES")
+    print("INGESTING SCHEDULE + BOXSCORES")
     print("=" * 60)
 
-    ingested_game_seasons     = get_ingested_seasons(conn)
+    ingested_boxscore_seasons     = get_ingested_seasons(conn)
     ingested_schedule_seasons = get_ingested_schedule_seasons(conn)
 
     # A season is skippable only if both tables already have it
-    fully_ingested = ingested_game_seasons & ingested_schedule_seasons
+    fully_ingested = ingested_boxscore_seasons & ingested_schedule_seasons
     if fully_ingested:
         print(f"INFO: Skipping already-ingested seasons: {sorted(fully_ingested)}")
 
@@ -344,14 +344,14 @@ def ingest_games(conn: psycopg.Connection):
     for season_num, season in enumerate(WBC_SEASONS, 1):
         print(f"\n--- Season {season} ({season_num}/{total_seasons}) ---")
 
-        skip_games    = str(season) in ingested_game_seasons
+        skip_boxscores    = str(season) in ingested_boxscore_seasons
         skip_schedule = str(season) in ingested_schedule_seasons
 
-        if skip_games and skip_schedule:
+        if skip_boxscores and skip_schedule:
             print(f"  SKIP: already ingested")
             continue
 
-        # One schedule API call — used for both raw.schedule and gamePk extraction
+        # One schedule API call — used for both wbc_raw.raw_wbc__schedule and gamePk extraction
         schedule_games = fetch_schedule_for_season(season)
         if not schedule_games:
             print(f"  No games found — skipping")
@@ -361,45 +361,45 @@ def ingest_games(conn: psycopg.Connection):
         if not skip_schedule:
             upsert_schedule(conn, schedule_games, season)
         else:
-            print(f"  SKIP raw.schedule: already ingested")
+            print(f"  SKIP wbc_raw.raw_wbc__schedule: already ingested")
 
         # Extract gamePks and fetch boxscores
-        if not skip_games:
+        if not skip_boxscores:
             game_pks = [int(g["gamePk"]) for g in schedule_games]
             boxscores = fetch_boxscores_for_season(season, game_pks)
-            upsert_games(conn, boxscores, season)
+            upsert_boxscores(conn, boxscores, season)
         else:
-            print(f"  SKIP raw.games: already ingested")
+            print(f"  SKIP wbc_raw.raw_wbc__boxscores: already ingested")
 
-    print("\nINFO: All seasons processed ✓")
+    print("\nINFO: All seasons processed ")
 
 # =============================================================================
 # VERIFICATION
 # =============================================================================
 
 def print_summary(conn: psycopg.Connection):
-    """Print row counts and breakdown by season for all raw tables."""
+    """Print row counts and breakdown by season for all wbc_raw tables."""
     with conn.cursor() as cur:
-        cur.execute("SELECT COUNT(*) FROM raw.players")
+        cur.execute("SELECT COUNT(*) FROM wbc_raw.raw_wbc__players")
         players = cur.fetchone()[0]
 
-        cur.execute("SELECT COUNT(*) FROM raw.games")
-        games = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM wbc_raw.raw_wbc__boxscores")
+        boxscores = cur.fetchone()[0]
 
-        cur.execute("SELECT COUNT(*) FROM raw.schedule")
+        cur.execute("SELECT COUNT(*) FROM wbc_raw.raw_wbc__schedule")
         schedule = cur.fetchone()[0]
 
         cur.execute("""
-            SELECT data->>'season' AS season, COUNT(*) AS games
-            FROM raw.games
+            SELECT data->>'season' AS season, COUNT(*) AS boxscores
+            FROM wbc_raw.raw_wbc__boxscores
             GROUP BY 1
             ORDER BY 1
         """)
-        games_by_season = cur.fetchall()
+        boxscores_by_season = cur.fetchall()
 
         cur.execute("""
             SELECT data->>'season' AS season, COUNT(*) AS entries
-            FROM raw.schedule
+            FROM wbc_raw.raw_wbc__schedule
             GROUP BY 1
             ORDER BY 1
         """)
@@ -408,32 +408,32 @@ def print_summary(conn: psycopg.Connection):
     print("\n" + "=" * 60)
     print("VERIFICATION SUMMARY")
     print("=" * 60)
-    print(f"  raw.players  : {players:,} rows")
-    print(f"  raw.games    : {games:,} rows")
-    print(f"  raw.schedule : {schedule:,} rows")
+    print(f"  wbc_raw.raw_wbc__players  : {players:,} rows")
+    print(f"  wbc_raw.raw_wbc__boxscores    : {boxscores:,} rows")
+    print(f"  wbc_raw.raw_wbc__schedule : {schedule:,} rows")
 
-    if games_by_season:
-        print("\n  raw.games by season:")
-        for season, count in games_by_season:
-            print(f"    {season or 'unknown'}: {count} games")
+    if boxscores_by_season:
+        print("\n  wbc_raw.raw_wbc__boxscores by season:")
+        for season, count in boxscores_by_season:
+            print(f"    {season or 'unknown'}: {count} boxscores")
 
     if schedule_by_season:
-        print("\n  raw.schedule by season:")
+        print("\n  wbc_raw.raw_wbc__schedule by season:")
         for season, count in schedule_by_season:
             print(f"    {season or 'unknown'}: {count} entries")
 
         # Sanity check — counts should match between tables per season
-        games_dict    = dict(games_by_season)
+        boxscores_dict    = dict(boxscores_by_season)
         schedule_dict = dict(schedule_by_season)
         mismatches = [
             s for s in schedule_dict
-            if games_dict.get(s) != schedule_dict[s]
+            if boxscores_dict.get(s) != schedule_dict[s]
         ]
         if mismatches:
-            print(f"\n  WARNING: Count mismatch between raw.games and raw.schedule for seasons: {mismatches}")
+            print(f"\n  WARNING: Count mismatch between wbc_raw.raw_wbc__boxscores and wbc_raw.raw_wbc__schedule for seasons: {mismatches}")
             print("  This is expected for the current season if games are scheduled but not yet played.")
         else:
-            print("\n  raw.games and raw.schedule counts match ✓")
+            print("\n  wbc_raw.raw_wbc__boxscores and wbc_raw.raw_wbc__schedule counts match ")
 
 # =============================================================================
 # ENTRY POINT
@@ -442,7 +442,7 @@ def print_summary(conn: psycopg.Connection):
 def main():
     parser = argparse.ArgumentParser(description="WBC Data Ingestion Pipeline")
     parser.add_argument("--players-only", action="store_true", help="Ingest players only")
-    parser.add_argument("--games-only",   action="store_true", help="Ingest schedule + games only")
+    parser.add_argument("--games-only",   action="store_true", help="Ingest schedule + boxscores only")
     parser.add_argument("--verify",       action="store_true", help="Print table counts, no ingestion")
     args = parser.parse_args()
 
@@ -469,7 +469,7 @@ def main():
 def run():
     """
     Programmatic entry point for Dagster (bypasses argparse).
-    Runs the full pipeline: players → schedule → games → summary.
+    Runs the full pipeline: players → schedule → boxscores → summary.
     """
     cfg  = load_config()
     conn = get_db_connection(cfg)

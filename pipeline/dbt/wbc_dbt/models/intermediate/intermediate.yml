@@ -1,52 +1,596 @@
 version: 2
 
 models:
-  - name: int_games
+
+  - name: int_wbc__games
     description: >
-      SINGLE SOURCE OF TRUTH FOR ALL GAME DATA.
-
-      This is the ONLY model that joins schedule and boxscore data. All downstream
-      analytics models select only from this table, never directly from staging or raw.
-
-      Provides clean, normalized, joined game data with all fields from both sources.
-      100% backwards compatible with all existing field names.
-
-      Lineage:
-        raw.schedule → stg_schedule ↘
-                               int_games
-        raw.games    → stg_games    ↗
+      One row per game. Sourced from stg_wbc__schedule.
+      Grain: game_pk.
     columns:
       - name: game_pk
-        description: MLB Stats API primary key. Globally unique.
+        description: Primary key. Unique identifier for each game.
         tests:
-          - not_null
           - unique
+          - not_null
+
+      - name: game_guid
+        description: Globally unique identifier for the game.
+
+      - name: game_type
+        description: Game type code. "F" = Final.
 
       - name: season
-        description: Tournament year
+        description: Season year, cast to int.
+
+      - name: pool
+        description: Pool or bracket description (e.g. "Pool A").
+
+      - name: series_description
+        description: Series description (e.g. "World Baseball Classic Pool Play").
+
+      - name: series_game_number
+        description: This game's position within the series.
+
+      - name: games_in_series
+        description: Total number of games in the series.
+
+      - name: game_date
+        description: Full game datetime with timezone, cast from ISO string.
+
+      - name: official_date
+        description: The official date of the game, cast to date.
         tests:
           - not_null
 
-      - name: away_team_abbreviation
-        description: Away team 3 letter code from boxscore
+      - name: day_night
+        description: Whether the game was played during the day or at night.
 
-      - name: home_team_abbreviation
-        description: Home team 3 letter code from boxscore
+      - name: is_tie
+        description: Whether the game ended in a tie.
 
-      - name: away_hits
-        description: Total hits for away team
+      - name: double_header
+        description: Double header indicator. "N" = not a double header.
 
-      - name: away_errors
-        description: Total errors for away team
+      - name: if_necessary
+        description: Whether this game was played as an if-necessary game.
 
-      - name: away_left_on_base
-        description: Total runners left on base for away team
+      - name: tiebreaker
+        description: Whether this game was a tiebreaker.
 
-      - name: home_hits
-        description: Total hits for home team
+      - name: venue_id
+        description: Identifier for the venue.
 
-      - name: home_errors
-        description: Total errors for home team
+      - name: venue_name
+        description: Name of the venue.
 
-      - name: home_left_on_base
-        description: Total runners left on base for home team
+      - name: ingested_at
+        description: Timestamp when the row was ingested from the source API.
+        tests:
+          - not_null
+
+
+  - name: int_wbc__game_teams
+    description: >
+      One row per team per game. Unpivoted from home/away structure in stg_wbc__schedule,
+      enriched with team-level batting, pitching, and fielding stats from stg_wbc__boxscore.
+      Grain: game_pk + team_id.
+    columns:
+      - name: game_team_id
+        description: Surrogate primary key. Hash of game_pk and team_id.
+        tests:
+          - unique
+          - not_null
+
+      - name: game_pk
+        description: Foreign key to int_wbc__games.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_wbc__games')
+                field: game_pk
+
+      - name: team_id
+        description: Identifier for the team.
+        tests:
+          - not_null
+
+      - name: team_name
+        description: Full team name (e.g. "Cuba").
+
+      - name: team_abbreviation
+        description: Team abbreviation (e.g. "CUB").
+
+      - name: side
+        description: Whether this team was the home or away team in this game.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['home', 'away']
+
+      - name: division_id
+        description: >
+          Division (pool) ID at time of game. Useful for pool play standings
+          without regex derivation.
+
+      - name: division_name
+        description: Division (pool) name at time of game (e.g. "Pool A").
+
+      - name: league_name
+        description: League name (e.g. "World Baseball Classic").
+
+      - name: is_winner
+        description: Whether this team won the game.
+        tests:
+          - not_null
+
+      - name: score
+        description: Final score for this team.
+
+      - name: wins
+        description: This team's win total as of this game.
+
+      - name: losses
+        description: This team's loss total as of this game.
+
+      - name: win_pct
+        description: This team's winning percentage as of this game, cast to numeric.
+
+      - name: hits
+        description: Total hits from the schedule box score line. Must equal batting_hits.
+
+      - name: runs
+        description: Total runs from the schedule box score line.
+
+      - name: errors
+        description: Total errors from the schedule box score line.
+
+      - name: left_on_base
+        description: Total runners left on base from the schedule box score line.
+
+      - name: batting_plate_appearances
+        description: Team total plate appearances from boxscore teamStats.
+
+      - name: batting_at_bats
+        description: Team total at bats.
+
+      - name: batting_runs
+        description: Team total runs from boxscore teamStats.
+
+      - name: batting_hits
+        description: >
+          Team total hits from boxscore teamStats. Should always equal the
+          schedule-sourced hits column. Monitored by cross-source consistency test.
+
+      - name: batting_doubles
+        description: Team total doubles.
+
+      - name: batting_triples
+        description: Team total triples.
+
+      - name: batting_home_runs
+        description: Team total home runs.
+
+      - name: batting_rbi
+        description: Team total RBI.
+
+      - name: batting_walks
+        description: Team total walks.
+
+      - name: batting_intentional_walks
+        description: Team total intentional walks.
+
+      - name: batting_strikeouts
+        description: Team total strikeouts.
+
+      - name: batting_hit_by_pitch
+        description: Team total hit by pitch.
+
+      - name: batting_sac_bunts
+        description: Team total sacrifice bunts.
+
+      - name: batting_sac_flies
+        description: Team total sacrifice flies.
+
+      - name: batting_stolen_bases
+        description: Team total stolen bases.
+
+      - name: batting_caught_stealing
+        description: Team total caught stealing.
+
+      - name: batting_left_on_base
+        description: Team total left on base from boxscore teamStats.
+
+      - name: batting_total_bases
+        description: Team total bases.
+
+      - name: batting_gidp
+        description: Team total grounded into double plays.
+
+      - name: pitching_outs
+        description: Team total outs recorded by pitching staff.
+
+      - name: pitching_innings_pitched
+        description: Team total innings pitched as a string (e.g. "9.0").
+
+      - name: pitching_hits_allowed
+        description: Team total hits allowed.
+
+      - name: pitching_runs_allowed
+        description: Team total runs allowed.
+
+      - name: pitching_earned_runs
+        description: Team total earned runs allowed.
+
+      - name: pitching_home_runs_allowed
+        description: Team total home runs allowed.
+
+      - name: pitching_strikeouts
+        description: Team total strikeouts recorded.
+
+      - name: pitching_walks
+        description: Team total walks issued.
+
+      - name: pitching_intentional_walks
+        description: Team total intentional walks issued.
+
+      - name: pitching_hit_batsmen
+        description: Team total batters hit by pitch.
+
+      - name: pitching_wild_pitches
+        description: Team total wild pitches.
+
+      - name: pitching_balks
+        description: Team total balks.
+
+      - name: pitching_total_pitches
+        description: Team total pitches thrown.
+
+      - name: pitching_balls
+        description: Team total ball calls.
+
+      - name: pitching_strikes
+        description: Team total strike calls.
+
+      - name: pitching_batters_faced
+        description: Team total batters faced.
+
+      - name: pitching_inherited_runners
+        description: Team total inherited runners.
+
+      - name: pitching_inherited_runners_scored
+        description: Team total inherited runners that scored.
+
+      - name: fielding_errors
+        description: Team total fielding errors.
+
+      - name: fielding_assists
+        description: Team total fielding assists.
+
+      - name: fielding_put_outs
+        description: Team total put outs.
+
+      - name: fielding_chances
+        description: Team total fielding chances.
+
+      - name: fielding_passed_balls
+        description: Team total passed balls.
+
+      - name: fielding_pickoffs
+        description: Team total pickoffs.
+
+      - name: ingested_at
+        description: Timestamp when the row was ingested from the source API.
+        tests:
+          - not_null
+
+  - name: int_wbc__game_innings
+    description: >
+      One row per inning per team per game. Unnested from the innings array
+      in stg_wbc__schedule and unpivoted by side.
+      Grain: game_pk + team_id + inning_num.
+    columns:
+      - name: game_inning_team_id
+        description: Surrogate primary key. Hash of game_pk, team_id, and inning_num.
+        tests:
+          - unique
+          - not_null
+
+      - name: game_pk
+        description: Foreign key to int_wbc__games.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_wbc__games')
+                field: game_pk
+
+      - name: team_id
+        description: Foreign key to int_wbc__game_teams.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_wbc__game_teams')
+                field: team_id
+
+      - name: inning_num
+        description: Inning number. May exceed 9 for extra inning games.
+        tests:
+          - not_null
+
+      - name: ordinal_num
+        description: Ordinal inning label (e.g. "1st", "2nd").
+
+      - name: side
+        description: Whether this row represents the home or away half of the inning.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['home', 'away']
+
+      - name: hits
+        description: Hits recorded by this team in this inning.
+
+      - name: runs
+        description: Runs scored by this team in this inning.
+
+      - name: errors
+        description: Errors committed by this team in this inning.
+
+      - name: left_on_base
+        description: Runners left on base by this team in this inning.
+
+      - name: ingested_at
+        description: Timestamp when the row was ingested from the source API.
+        tests:
+          - not_null
+
+
+  - name: int_wbc__game_players
+    description: >
+      One row per player per game. Unnested from the players map in stg_wbc__boxscore.
+      Includes per-game stats (batting, pitching, fielding). Counting stats are intentionally nullable — a pitcher's batting
+      stats and a batter's pitching stats should remain null, not zero, to avoid
+      corrupting aggregations and leaderboards in the mart layer.
+      Grain: game_pk + player_id.
+    columns:
+      - name: game_player_id
+        description: Surrogate primary key. Hash of game_pk and player_id.
+        tests:
+          - unique
+          - not_null
+
+      - name: game_pk
+        description: Foreign key to int_wbc__games.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_wbc__games')
+                field: game_pk
+
+      - name: player_id
+        description: Identifier for the player.
+        tests:
+          - not_null
+
+      - name: team_id
+        description: >
+          Foreign key to int_wbc__game_teams. Carried as a column to enable
+          team-level filtering downstream without rejoining.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_wbc__game_teams')
+                field: team_id
+
+      - name: side
+        description: Whether this player was on the home or away team.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['home', 'away']
+
+      - name: full_name
+        description: Player full name.
+
+      - name: boxscore_name
+        description: Player name as displayed on the boxscore (typically last name).
+
+      - name: jersey_number
+        description: Player jersey number for this game.
+
+      - name: position_code
+        description: Position code (e.g. "1" for pitcher, "10" for DH).
+
+      - name: position_name
+        description: Position name (e.g. "Pitcher", "Designated Hitter").
+
+      - name: position_type
+        description: Position type (e.g. "Pitcher", "Hitter", "Infielder").
+
+      - name: position_abbreviation
+        description: Position abbreviation (e.g. "P", "DH", "SS").
+
+      - name: is_on_bench
+        description: Whether the player was on the bench for this game.
+
+      - name: is_substitute
+        description: Whether the player entered as a substitute.
+
+      - name: is_current_batter
+        description: Whether the player was the current batter at time of ingestion.
+
+      - name: is_current_pitcher
+        description: Whether the player was the current pitcher at time of ingestion.
+
+      - name: batting_order
+        description: >
+          Lineup position (1–9). Null for pitchers and bench players
+          who did not appear in the batting order.
+
+      - name: batting_plate_appearances
+        description: Plate appearances in this game. Null for players who did not bat.
+
+      - name: batting_at_bats
+        description: At bats in this game.
+
+      - name: batting_runs
+        description: Runs scored in this game.
+
+      - name: batting_hits
+        description: Hits in this game.
+
+      - name: batting_doubles
+        description: Doubles in this game.
+
+      - name: batting_triples
+        description: Triples in this game.
+
+      - name: batting_home_runs
+        description: Home runs in this game.
+
+      - name: batting_rbi
+        description: RBI in this game.
+
+      - name: batting_walks
+        description: Walks in this game.
+
+      - name: batting_intentional_walks
+        description: Intentional walks in this game.
+
+      - name: batting_strikeouts
+        description: Strikeouts in this game.
+
+      - name: batting_hit_by_pitch
+        description: Times hit by pitch in this game.
+
+      - name: batting_sac_bunts
+        description: Sacrifice bunts in this game.
+
+      - name: batting_sac_flies
+        description: Sacrifice flies in this game.
+
+      - name: batting_stolen_bases
+        description: Stolen bases in this game.
+
+      - name: batting_caught_stealing
+        description: Times caught stealing in this game.
+
+      - name: batting_left_on_base
+        description: Runners left on base in this game.
+
+      - name: batting_total_bases
+        description: Total bases in this game.
+
+      - name: batting_gidp
+        description: Grounded into double plays in this game.
+
+      - name: batting_ground_outs
+        description: Ground outs in this game.
+
+      - name: batting_air_outs
+        description: Air outs in this game.
+
+      - name: batting_pickoffs
+        description: Times picked off in this game.
+
+      - name: pitching_outs
+        description: Outs recorded in this game. Null for non-pitchers.
+
+      - name: pitching_innings_pitched
+        description: Innings pitched in this game as a string (e.g. "6.2").
+
+      - name: pitching_total_pitches
+        description: Total pitches thrown in this game.
+
+      - name: pitching_strikes
+        description: Total strikes thrown in this game.
+
+      - name: pitching_balls
+        description: Total balls thrown in this game.
+
+      - name: pitching_hits_allowed
+        description: Hits allowed in this game.
+
+      - name: pitching_runs_allowed
+        description: Runs allowed in this game.
+
+      - name: pitching_earned_runs
+        description: Earned runs allowed in this game.
+
+      - name: pitching_home_runs_allowed
+        description: Home runs allowed in this game.
+
+      - name: pitching_strikeouts
+        description: Strikeouts recorded in this game.
+
+      - name: pitching_walks
+        description: Walks issued in this game.
+
+      - name: pitching_intentional_walks
+        description: Intentional walks issued in this game.
+
+      - name: pitching_hit_batsmen
+        description: Batters hit by pitch in this game.
+
+      - name: pitching_wild_pitches
+        description: Wild pitches in this game.
+
+      - name: pitching_balks
+        description: Balks in this game.
+
+      - name: pitching_batters_faced
+        description: Total batters faced in this game.
+
+      - name: pitching_inherited_runners
+        description: Inherited runners in this game.
+
+      - name: pitching_inherited_runners_scored
+        description: Inherited runners that scored in this game.
+
+      - name: pitching_wins
+        description: Win recorded in this game.
+
+      - name: pitching_losses
+        description: Loss recorded in this game.
+
+      - name: pitching_saves
+        description: Save recorded in this game.
+
+      - name: pitching_holds
+        description: Hold recorded in this game.
+
+      - name: pitching_blown_saves
+        description: Blown save recorded in this game.
+
+      - name: pitching_games_started
+        description: Whether this pitcher started the game (0 or 1).
+
+      - name: fielding_errors
+        description: Fielding errors in this game.
+
+      - name: fielding_assists
+        description: Fielding assists in this game.
+
+      - name: fielding_put_outs
+        description: Put outs recorded in this game.
+
+      - name: fielding_chances
+        description: Fielding chances in this game.
+
+      - name: fielding_passed_balls
+        description: Passed balls in this game.
+
+      - name: fielding_pickoffs
+        description: Pickoffs recorded in this game.
+
+      - name: ingested_at
+        description: Timestamp when the row was ingested from the source API.
+        tests:
+          - not_null

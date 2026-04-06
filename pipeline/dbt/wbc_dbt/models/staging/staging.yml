@@ -1,408 +1,232 @@
 version: 2
 
 models:
-  - name: stg_schedule
+  - name: stg_wbc__players
     description: >
-      One row per game. Pure 1:1 flattening of raw.schedule JSON blobs into clean columns.
-      No joins performed at this layer. Source of truth for game metadata — dates, scores, teams, round, status.
-      Team abbreviations are NOT present here — they come from stg_games and are joined in int_games.
-    columns:
-      - name: game_pk
-        description: MLB Stats API primary key for a game. Globally unique across all seasons.
-        tests:
-          - not_null
-          - unique
-      - name: season
-        description: Tournament year (2006, 2009, 2013, 2017, 2023, 2026).
-        tests:
-          - not_null
-      - name: game_type
-        description: >
-          Round code from the MLB API. F = Pool play, D = Second Round/Quarterfinals,
-          L = Semifinals, W = Championship. Note: D means Second Round pools in
-          2006-2017 and Quarterfinals in 2023+.
-        tests:
-          - not_null
-          - accepted_values:
-              values: ['F', 'D', 'L', 'W']
-      - name: official_date
-        description: Game date in ISO format (YYYY-MM-DD). From raw.schedule officialDate.
-        tests:
-          - not_null
-      - name: day_night
-        description: >
-          Whether the game was played during the day or at night ('day' or 'night').
-          Passes through to game_results. May be null on some legacy seasons.
-      - name: abstract_game_state
-        description: >
-          High-level game status. 'Final' = completed, 'Preview' = not yet played,
-          'Live' = game currently in progress. Live state only appears during active
-          tournament play and resolves to Final after the game ends.
-        tests:
-          - accepted_values:
-              values: ['Final', 'Preview', 'Live']
-      - name: detailed_state
-        description: >
-          Granular game status. 'Final' = completed normally,
-          'Completed Early' = mercy rule (10-run rule), 'Scheduled' = not yet played,
-          'In Progress' = game currently being played.
-      - name: is_mercy_rule
-        description: >
-          True if the game ended via the 10-run mercy rule (detailedState = 'Completed Early').
-          False for normally completed games. NULL for games not yet finished (Live/Preview).
-      - name: away_team_name
-        description: Full name of the away team (e.g. 'Japan', 'Cuba').
-      - name: away_team_id
-        description: >
-          MLB Stats API team ID for the away team (integer). May be NULL for
-          placeholder teams (e.g. 'Semifinal 1 Winner') where no team ID exists yet.
-      - name: home_team_name
-        description: Full name of the home team.
-      - name: home_team_id
-        description: >
-          MLB Stats API team ID for the home team (integer). May be NULL for
-          placeholder teams where no team ID exists yet.
-      - name: away_score
-        description: >
-          Final runs scored by the away team. NULL on unplayed games —
-          absent in the API, not zero.
-      - name: home_score
-        description: >
-          Final runs scored by the home team. NULL on unplayed games —
-          absent in the API, not zero.
-      - name: away_is_winner
-        description: >
-          True if the away team won. False if they lost. NULL on unplayed games
-          and on completed games where winner flags haven't yet populated (API lag).
-          Used by standings.sql to compute wins/losses — do not remove.
-      - name: home_is_winner
-        description: >
-          True if the home team won. False if they lost. NULL on unplayed games
-          and on completed games with API lag. Used by standings.sql to compute
-          wins/losses — do not remove.
-      - name: venue_name
-        description: Stadium name (e.g. 'Taichung Intercontinental Baseball Stadium').
-      - name: description
-        description: >
-          Human-readable game label from the API (e.g. 'Pool A Game 1',
-          'Championship Game', 'Quarterfinal 2: Pool B Runner-Up vs. Pool A Winner').
-          Used for bracket display on unplayed knockout games and pool_label extraction
-          via regex in game_results.sql.
-      - name: series_description
-        description: >
-          Series label from the API (e.g. 'World Baseball Classic Pool Play').
-          Passes through to game_results for context display.
-      - name: if_necessary
-        description: >
-          Whether the game was conditional / if-necessary. 'Y' or 'N' as returned
-          by the API. Relevant for if-necessary pool play games.
-      - name: away_team_is_placeholder
-        description: >
-          True if the away team slot is not yet determined (e.g. 'Semifinal 1 Winner').
-          Note: less reliable than away_score IS NULL for detecting unplayed games —
-          use away_score IS NULL as the authoritative signal.
-      - name: home_team_is_placeholder
-        description: >
-          True if the home team slot is not yet determined.
-          Note: less reliable than home_score IS NULL for detecting unplayed games.
-      - name: ingested_at
-        description: >
-          Timestamp when this row was written to raw.schedule by the ingestion pipeline.
-          Pipeline metadata — not used in downstream analytics models.
-
-  - name: stg_games
-    description: >
-      One row per game. Pure 1:1 flattening of raw.games boxscore JSON blobs into clean columns.
-      No joins performed at this layer. Source of truth for boxscore data, team abbreviations, hits, errors, LOB.
-    columns:
-      - name: game_pk
-        description: MLB Stats API primary key for a game. Globally unique across all seasons.
-        tests:
-          - not_null
-          - unique
-      - name: season
-        description: Tournament year (2006, 2009, 2013, 2017, 2023, 2026).
-        tests:
-          - not_null
-      - name: away_team_abbreviation
-        description: >
-          Away team abbreviation (e.g. 'JPN', 'CUB'). Sourced from raw.games —
-          not present in raw.schedule team objects.
-      - name: home_team_abbreviation
-        description: >
-          Home team abbreviation. Sourced from raw.games —
-          not present in raw.schedule team objects.
-      - name: away_runs
-        description: Total runs scored by the away team in this game.
-      - name: away_hits
-        description: Total hits for away team.
-      - name: away_errors
-        description: Total errors for away team.
-      - name: away_left_on_base
-        description: Total runners left on base for away team.
-      - name: home_runs
-        description: Total runs scored by the home team in this game.
-      - name: home_hits
-        description: Total hits for home team.
-      - name: home_errors
-        description: Total errors for home team.
-      - name: home_left_on_base
-        description: Total runners left on base for home team.
-      - name: ingested_at
-        description: >
-          Timestamp when this row was written to raw.games by the ingestion pipeline.
-
-  - name: stg_players
-    description: >
-      One row per player. Flattens raw.players JSON blobs into biographical columns.
-      Important: birth_country is WHERE the player was born — NOT the country they
-      represented in the WBC. Represented country is derived from boxscore team context.
+      Staging model for WBC player data. 
+      Optimized schema with 17 redundant fields removed while maintaining all analytical value.
     columns:
       - name: player_id
-        description: >
-          Internal surrogate key from raw.players (the raw.players.player_id column).
-          Distinct from person_id.
+        description: Player unique identifier number
         tests:
-          - not_null
           - unique
-      - name: person_id
-        description: >
-          MLB Stats API person ID. Matches the numeric portion of boxscore player
-          keys (e.g. key "ID464277" → person_id 464277). Use this to join to boxscore data.
-        tests:
           - not_null
-          - unique
-      - name: full_name
-        description: Player's full legal name (e.g. 'Albert Abreu').
-      - name: use_name
-        description: Player's preferred first name used on broadcasts.
-      - name: last_name
-        description: Player's last name.
-      - name: boxscore_name
-        description: Name as displayed on a physical boxscore (e.g. 'Abreu, A').
-      - name: name_slug
-        description: URL-safe slug for the player (e.g. 'albert-abreu-656061').
-      - name: jersey_number
-        description: Player's jersey number as a string. May be null if not set.
-      - name: height
-        description: >
-          Player's height as a string in feet/inches format (e.g. "6' 2\"").
-          Requires parsing for numeric use.
-      - name: weight
-        description: Player's weight in pounds (integer).
-      - name: birth_date
-        description: >
-          Player's date of birth (YYYY-MM-DD). Use with tournament season year to
-          compute the player's age at the time of the tournament.
-      - name: birth_city
-        description: City where the player was born.
-      - name: birth_country
-        description: >
-          Country where the player was born. This is birthplace only —
-          NOT the country they represented in the WBC. Do not use for
-          nationality or team affiliation queries.
-      - name: bat_side
-        description: Batting handedness. L = left, R = right, S = switch.
-        tests:
-          - accepted_values:
-              values: ['L', 'R', 'S']
-              config:
-                where: "bat_side is not null"
-      - name: pitch_hand
-        description: Throwing hand. L = left, R = right, S = switch (ambidextrous pitcher).
-        tests:
-          - accepted_values:
-              values: ['L', 'R', 'S']
-              config:
-                where: "pitch_hand is not null"
-      - name: position_abbreviation
-        description: Primary position abbreviation (e.g. 'P', 'C', '1B', 'SS').
-      - name: position_name
-        description: Primary position full name (e.g. 'Pitcher', 'Catcher').
-      - name: position_type
-        description: Position category — 'Pitcher', 'Catcher', 'Infielder', 'Outfielder'.
-      - name: mlb_debut_date
-        description: Date of the player's MLB debut (YYYY-MM-DD). May be null for non-MLB players.
-      - name: is_active
-        description: Whether the player is currently active in MLB.
-      - name: current_mlb_team_id
-        description: MLB Stats API team ID for the player's current MLB team.
-      - name: middle_name
-        description: Player's middle name. May be null.
-      - name: name_matrilineal
-        description: >
-          Maternal surname, present for players following Latin naming conventions.
-          May be null.
       - name: ingested_at
-        description: >
-          Timestamp when this row was written to raw.players by the ingestion pipeline.
-          Pipeline metadata — not used in downstream analytics models.
+        description: Timestamp when the record was ingested into the system (UTC timezone)
+        tests:
+          - not_null
+      - name: active
+        description: Indicates if the player is currently active in the league
+      - name: gender
+        description: Player gender code ("M" = Male)
+      - name: height
+        description: Player height in feet/inches format
+      - name: weight
+        description: Player weight in pounds (lbs)
+      - name: bat_side_code
+        description: Batting side code (R = Right, L = Left, S = Switch)
+      - name: use_name
+        description: Preferred nickname/short name the player goes by
+      - name: full_name
+        description: Player's full display name
+      - name: last_name
+        description: Player's family/last name
+      - name: birth_city
+        description: City where the player was born
+      - name: birth_date
+        description: Player's date of birth (YYYY-MM-DD format)
+      - name: first_name
+        description: Player's legal first name
+      - name: pitch_hand_code
+        description: Pitching hand code (R = Right, L = Left)
+      - name: current_age
+        description: Player's current calculated age in years
+      - name: is_verified
+        description: Indicates if player profile has been verified
+      - name: middle_name
+        description: Player's middle name
+      - name: current_team_id
+        description: Unique identifier for the player's current team
+      - name: use_last_name
+        description: Preferred last name for display
+      - name: birth_country
+        description: Country where the player was born
+      - name: boxscore_name
+        description: Short name used in game boxscores
+      - name: mlb_debut_date
+        description: Date player made their MLB debut (YYYY-MM-DD format)
+      - name: primary_number
+        description: Player's jersey number
+      - name: strike_zone_top
+        description: Measured top coordinate of player's strike zone
+      - name: primary_position_code
+        description: Numeric position code identifier
+      - name: primary_position_name
+        description: Full name of player's primary position
+      - name: primary_position_type
+        description: Position category type
+      - name: primary_position_abbreviation
+        description: Standard position abbreviation
+      - name: strike_zone_bottom
+        description: Measured bottom coordinate of player's strike zone
 
-  - name: stg_player_game_stats
+  - name: stg_wbc__schedule
     description: >
-      One row per player per game per side (home/away). Unnests player nodes
-      from raw.games boxscore blobs using jsonb_each(). Only completed games
-      are included (abstract_game_state = 'Final'). Live games are excluded
-      intentionally — partial-game seasonStats would corrupt tournament leaderboards.
-      Contains both single-game stats (batting_*/pitching_*) and cumulative
-      tournament stats (season_*).
+      Staging model for WBC schedule / game data.
+      Optimized schema with 22 unnecessary fields removed while maintaining all practical analytical value.
     columns:
       - name: game_pk
-        description: MLB Stats API game primary key.
+        description: Game primary key identifier number
+        tests:
+          - unique
+          - not_null
+      - name: ingested_at
+        description: Timestamp when the record was ingested into the system (UTC timezone)
         tests:
           - not_null
+      - name: game_guid
+        description: Globally unique identifier for this game
+      - name: game_type
+        description: Game type code (W = World Baseball Classic)
       - name: season
-        description: Tournament year.
-        tests:
-          - not_null
+        description: Season year for this game
+      - name: game_date
+        description: Game scheduled start timestamp in UTC ISO format
       - name: official_date
-        description: >
-          Game date (YYYY-MM-DD). Sourced from raw.schedule joined in the games CTE.
-          Used by player_tournament_stats.last_game_per_player to find each player's
-          final game — critical for correct tournament stat selection. Do not remove.
-      - name: team_side
-        description: Which side of the game this player appeared on — 'home' or 'away'.
+        description: Official game date in YYYY-MM-DD format
+      - name: day_night
+        description: Indicates if game is played during 'day' or 'night'
+      - name: description
+        description: Game series or round description
+      - name: series_description
+        description: Full description of the game series
+      - name: is_tie
+        description: Indicates if this game ended in a tie
+      - name: status_code
+        description: Short status code for the game
+      - name: start_time_tbd
+        description: Indicates if game start time is to be determined
+      - name: coded_game_state
+        description: Coded game state identifier
+      - name: abstract_game_code
+        description: Abstract game state code
+      - name: game_number
+        description: Game number in doubleheader or series
+      - name: double_header
+        description: Double header game indicator code
+      - name: tiebreaker
+        description: Tiebreaker indicator code
+      - name: if_necessary
+        description: Indicates if game is an 'if necessary' game
+      - name: gameday_type
+        description: Game day type code
+      - name: games_in_series
+        description: Total number of games in this series
+      - name: series_game_number
+        description: Game number within the series
+      - name: inning_break_length
+        description: Length of inning break in seconds
+      - name: reverse_home_away_status
+        description: Indicates if home/away designations are reversed
+      - name: venue_id
+        description: Venue unique identifier
+      - name: venue_name
+        description: Full name of the game stadium/venue
+      - name: away_team_id
+        description: Away team unique identifier
+      - name: away_team_name
+        description: Full name of the away team
+      - name: away_score
+        description: Final score total for the away team
+      - name: away_is_winner
+        description: Indicates if the away team won this game
+      - name: away_split_squad
+        description: Indicates if this is a split squad team roster
+      - name: away_series_number
+        description: Game sequence number within the series
+      - name: away_win_pct
+        description: Winning percentage for the away team
+      - name: away_wins
+        description: Total season wins for the away team
+      - name: away_losses
+        description: Total season losses for the away team
+      - name: home_team_id
+        description: Home team unique identifier
+      - name: home_team_name
+        description: Full name of the home team
+      - name: home_score
+        description: Final score total for the home team
+      - name: home_is_winner
+        description: Indicates if the home team won this game
+      - name: home_split_squad
+        description: Indicates if this is a split squad team roster
+      - name: home_series_number
+        description: Game sequence number within the series
+      - name: home_win_pct
+        description: Winning percentage for the home team
+      - name: home_wins
+        description: Total season wins for the home team
+      - name: home_losses
+        description: Total season losses for the home team
+      - name: outs
+        description: Number of outs recorded in current inning
+      - name: balls
+        description: Current pitch count balls
+      - name: strikes
+        description: Current pitch count strikes
+      - name: inning_half
+        description: Which half of the inning is currently being played (Top/Bottom)
+      - name: inning_state
+        description: Current inning state
+      - name: current_inning
+        description: Current inning number being played
+      - name: scheduled_innings
+        description: Total number of scheduled innings for this game
+      - name: away_hits
+        description: Total hits for away team
+      - name: away_runs
+        description: Total runs scored for away team
+      - name: away_errors
+        description: Total errors committed by away team
+      - name: away_left_on_base
+        description: Total runners left on base for away team
+      - name: home_hits
+        description: Total hits for home team
+      - name: home_runs
+        description: Total runs scored for home team
+      - name: home_errors
+        description: Total errors committed by home team
+      - name: home_left_on_base
+        description: Total runners left on base for home team
+      - name: innings
+        description: Array container with per-inning breakdown data
+
+  - name: stg_wbc__boxscores
+    description: >
+      Staging model for WBC boxscores data.
+      Optimized schema with 28 unnecessary fields removed while maintaining all practical analytical value.
+      All season statistics and team dimension fields have been intentionally retained.
+    columns:
+      - name: game_pk
+        description: Unique game primary key identifier
+        tests:
+          - unique
+          - not_null
+      - name: ingested_at
+        description: Timestamp when the record was ingested into the system (UTC timezone)
         tests:
           - not_null
-          - accepted_values:
-              values: ['home', 'away']
-      - name: team_abbreviation
-        description: >
-          Abbreviation of the team this player appeared for (e.g. 'JPN', 'USA').
-          Sourced from the raw.games boxscore team object. Passes through to
-          player_game_stats and player_tournament_stats.
-      - name: team_name
-        description: >
-          Full name of the team this player appeared for (e.g. 'Japan', 'United States').
-          Also used as represented_country — see that column's description.
-      - name: represented_country
-        description: >
-          WBC country this player represented in this game. Set equal to team_name
-          from the boxscore. This is the correct derivation — NOT birth_country from
-          raw.players, which is birthplace only. A Dominican-born player can represent
-          the USA; represented_country captures that correctly.
-      - name: person_id
-        description: >
-          Player's MLB Stats API person ID. Derived by stripping the 'ID' prefix
-          from boxscore player keys and casting to integer.
-        tests:
-          - not_null
-      - name: full_name
-        description: Player's full name from the boxscore.
-      - name: position_abbreviation
-        description: Position abbreviation for this game appearance.
-      - name: position_type
-        description: Position type — 'Pitcher', 'Catcher', 'Infielder', 'Outfielder'.
-      - name: jersey_number
-        description: Jersey number from the boxscore. May be null if not set.
-      - name: batting_order_raw
-        description: >
-          Raw batting order value from API (position × 100, e.g. 600 for 6th batter).
-          0 means no order assigned. Preserved for reference alongside batting_order.
-      - name: batting_order
-        description: >
-          Lineup position (1–9). Derived by dividing batting_order_raw by 100.
-          NULL for players not in the starting lineup, bench players, substitutes,
-          or where API returned 0 (no order assigned).
-      - name: is_substitute
-        description: True if the player entered as a substitute (not in starting lineup).
-      - name: is_on_bench
-        description: True if the player appeared on the bench but did not play.
-      - name: batting_ab
-        description: At-bats in this game.
-      - name: batting_h
-        description: Hits in this game.
-      - name: batting_2b
-        description: Doubles in this game.
-      - name: batting_3b
-        description: Triples in this game.
-      - name: batting_hr
-        description: Home runs in this game.
-      - name: batting_rbi
-        description: Runs batted in during this game.
-      - name: batting_r
-        description: Runs scored in this game.
-      - name: batting_bb
-        description: Walks (base on balls) in this game.
-      - name: batting_so
-        description: Strikeouts as a batter in this game.
-      - name: batting_sb
-        description: Stolen bases in this game.
-      - name: batting_lob
-        description: Runners left on base in this game.
-      - name: batting_sf
-        description: Sacrifice flies in this game.
-      - name: batting_hbp
-        description: Hit by pitch in this game.
-      - name: pitching_ip_raw
-        description: >
-          Raw innings pitched string from the API (e.g. "4.2", "0.1", "9.0").
-          Preserved for reference and test validation. The outs digit (after the
-          decimal) is 0, 1, or 2 — not a decimal fraction.
-      - name: pitching_ip
-        description: >
-          Innings pitched converted to true decimal.
-          "4.2" (4 innings + 2 outs) → 4.6667. Rounded to 4 decimal places.
-          Do not treat the raw string as a decimal fraction.
-      - name: pitching_er
-        description: Earned runs allowed in this game.
-      - name: pitching_r
-        description: Total runs allowed in this game (earned + unearned).
-      - name: pitching_so
-        description: Strikeouts recorded as a pitcher in this game.
-      - name: pitching_bb
-        description: Walks allowed as a pitcher in this game.
-      - name: pitching_h
-        description: Hits allowed in this game.
-      - name: pitching_hr
-        description: Home runs allowed in this game.
-      - name: pitching_bf
-        description: Total batters faced in this game.
-      - name: pitching_w
-        description: Whether the pitcher was credited with a win (0 or 1).
-      - name: pitching_l
-        description: Whether the pitcher was credited with a loss (0 or 1).
-      - name: pitching_sv
-        description: Whether the pitcher was credited with a save (0 or 1).
-      - name: season_batting_avg
-        description: Cumulative batting average in the tournament (string from API, e.g. '.321').
-      - name: season_batting_obp
-        description: Cumulative on-base percentage in the tournament.
-      - name: season_batting_slg
-        description: Cumulative slugging percentage in the tournament.
-      - name: season_batting_ops
-        description: Cumulative OPS in the tournament.
-      - name: season_batting_ab
-        description: Cumulative at-bats for this player through this point in the tournament.
-      - name: season_batting_h
-        description: Cumulative hits in the tournament.
-      - name: season_batting_hr
-        description: Cumulative home runs in the tournament.
-      - name: season_batting_rbi
-        description: Cumulative RBI in the tournament.
-      - name: season_batting_r
-        description: Cumulative runs scored in the tournament.
-      - name: season_batting_bb
-        description: Cumulative walks in the tournament.
-      - name: season_batting_so
-        description: Cumulative strikeouts as a batter in the tournament.
-      - name: season_batting_sb
-        description: Cumulative stolen bases in the tournament.
-      - name: season_pitching_ip_raw
-        description: Cumulative innings pitched string from API (outs notation).
-      - name: season_pitching_ip
-        description: Cumulative innings pitched in the tournament, converted to true decimal.
-      - name: season_pitching_era
-        description: Cumulative ERA in the tournament (string from API, e.g. '1.50').
-      - name: season_pitching_w
-        description: Cumulative pitching wins in the tournament.
-      - name: season_pitching_l
-        description: Cumulative pitching losses in the tournament.
-      - name: season_pitching_sv
-        description: Cumulative saves in the tournament.
-      - name: season_pitching_so
-        description: Cumulative strikeouts as a pitcher in the tournament.
-      - name: season_pitching_bb
-        description: Cumulative walks allowed as a pitcher in the tournament.
-      - name: season_pitching_bf
-        description: Cumulative batters faced as a pitcher in the tournament.
+      - name: info
+        description: Array of general game information objects
+      - name: away_team_data
+        description: Full away team boxscore data object (contains stats, players, team info)
+      - name: home_team_data
+        description: Full home team boxscore data object (contains stats, players, team info)
+      - name: away_team_id
+        description: Away team unique identifier
+      - name: away_team_name
+        description: Full name of the away team
+      - name: home_team_id
+        description: Home team unique identifier
+      - name: home_team_name
+        description: Full name of the home team

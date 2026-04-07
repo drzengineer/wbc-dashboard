@@ -44,21 +44,22 @@ const highestTotalRuns = $derived(highestScoringGame ? (highestScoringGame.away_
 // Pool standings - filtered for selected season
 const pools = $derived(data.pools.get(selectedSeason) || new Map());
 
-// Calculate best run differential across all teams
+// Get season-wide team totals for selected season
+const seasonTeams = $derived(Array.from(data.seasonTeamTotals.get(selectedSeason)?.values() || []));
+
+// Calculate best run differential ACROSS ENTIRE SEASON (pool + knockout)
 const bestRunDiff = $derived.by(() => {
-    const allTeams = Array.from(pools.values()).flat();
-    if (allTeams.length === 0) return null;
+    if (seasonTeams.length === 0) return null;
     
-    return allTeams.reduce((best, team) => 
-        team.pool_run_differential > best.pool_run_differential ? team : best
+    return seasonTeams.reduce((best, team) => 
+        team.total_run_differential > best.total_run_differential ? team : best
     );
 });
 
-// Top scoring teams across all pools
+// Top scoring teams ACROSS ENTIRE SEASON (all games)
 const topScoringTeams = $derived.by(() => {
-    return Array.from(pools.values())
-        .flat()
-        .sort((a, b) => b.pool_runs_scored - a.pool_runs_scored)
+    return [...seasonTeams]
+        .sort((a, b) => b.total_runs_scored - a.total_runs_scored)
         .slice(0, 5);
 });
 const bracket = $derived(data.brackets.get(selectedSeason) || { qf: [], sf: [], final: null });
@@ -117,7 +118,7 @@ const TBD_FINAL = { label: "TBD", classes: "bg-surface border border-gold/20 bor
             <Flame class="w-4 h-4 text-green-400 absolute top-4 right-4 opacity-50" />
             <span class="text-xs text-[#8888a0] font-medium mb-1 uppercase tracking-wider">Best Run Diff</span>
             <span class="text-3xl font-bold text-green-400">
-                {bestRunDiff ? `+${bestRunDiff.pool_run_differential}` : '+0'}
+                {bestRunDiff ? `+${bestRunDiff.total_run_differential}` : '+0'}
             </span>
             <span class="text-xs text-green-400 mt-2 bg-green-400/10 px-2 py-0.5 rounded-full font-bold tracking-wide">
                 {bestRunDiff ? bestRunDiff.team_abbreviation : 'N/A'}
@@ -127,7 +128,7 @@ const TBD_FINAL = { label: "TBD", classes: "bg-surface border border-gold/20 bor
         <div class="bg-surface border border-border rounded-xl px-5 py-5 flex flex-col items-center justify-center hover:border-border-light transition-colors relative overflow-hidden">
             <Rocket class="w-4 h-4 text-blue-400 absolute top-4 right-4 opacity-50" />
             <span class="text-xs text-[#8888a0] font-medium mb-1 uppercase tracking-wider">Top Scoring Team</span>
-            <span class="text-3xl font-bold text-blue-400">{topScoringTeams[0]?.pool_runs_scored || 0}</span>
+            <span class="text-3xl font-bold text-blue-400">{topScoringTeams[0]?.total_runs_scored || 0}</span>
             <span class="text-xs text-blue-400 mt-2 bg-blue-400/10 px-2 py-0.5 rounded-full font-bold tracking-wide">
                 {topScoringTeams[0] ? topScoringTeams[0].team_abbreviation : 'N/A'}
             </span>

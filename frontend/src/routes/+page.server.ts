@@ -188,6 +188,48 @@ export const load: PageServerLoad = async () => {
         });
     }
 
+    // Calculate SEASON-WIDE team totals (all games: pool + knockout)
+    const seasonTeamTotals = new Map<number | string, Map<string, any>>();
+    
+    for (const game of (allGames || [])) {
+        // Initialize season map if needed
+        if (!seasonTeamTotals.has(game.season)) {
+            seasonTeamTotals.set(game.season, new Map<string, any>());
+        }
+        
+        const seasonTeams = seasonTeamTotals.get(game.season)!;
+        
+        // Update AWAY team stats
+        if (!seasonTeams.has(game.away_team_name)) {
+            seasonTeams.set(game.away_team_name, {
+                team_name: game.away_team_name,
+                team_abbreviation: game.away_team_abbreviation,
+                total_runs_scored: 0,
+                total_runs_allowed: 0,
+                total_run_differential: 0
+            });
+        }
+        const awayTeam = seasonTeams.get(game.away_team_name)!;
+        awayTeam.total_runs_scored += game.away_score;
+        awayTeam.total_runs_allowed += game.home_score;
+        awayTeam.total_run_differential += (game.away_score - game.home_score);
+        
+        // Update HOME team stats
+        if (!seasonTeams.has(game.home_team_name)) {
+            seasonTeams.set(game.home_team_name, {
+                team_name: game.home_team_name,
+                team_abbreviation: game.home_team_abbreviation,
+                total_runs_scored: 0,
+                total_runs_allowed: 0,
+                total_run_differential: 0
+            });
+        }
+        const homeTeam = seasonTeams.get(game.home_team_name)!;
+        homeTeam.total_runs_scored += game.home_score;
+        homeTeam.total_runs_allowed += game.away_score;
+        homeTeam.total_run_differential += (game.home_score - game.away_score);
+    }
+
     console.log(`✅ Loaded: ${uniqueSeasons.length} seasons | ${totalGames} total games | ${brackets.size} brackets | ${recentGames.length} recent games`);
 
     return {
@@ -196,6 +238,7 @@ export const load: PageServerLoad = async () => {
         pools: finalPools,
         brackets: brackets,
         recentGames: recentGames || [],
-        allGames: allGames || []
+        allGames: allGames || [],
+        seasonTeamTotals: seasonTeamTotals
     };
 };

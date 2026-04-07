@@ -1,5 +1,4 @@
-# ⚾ World Baseball Classic Data Platform
-# + RAG AI Assistant
+# ⚾ World Baseball Classic Data Platform <br> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + RAG AI Assistant
 
 Production-grade data engineering + AI system for exploring World Baseball Classic data  
 through both a modern dashboard and natural-language query interface.

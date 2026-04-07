@@ -287,18 +287,27 @@ Groq API key
 ```
 wbc-dashboard/
 ├── pipeline/
-│ ├── ingestion/ # API ingestion + embeddings
-│ ├── dbt/ # SQL models (staging + analytics)
-│ ├── dagster/ # Orchestration assets
-│ ├── Dockerfile
-│ └── docker-compose.yml
+│   ├── ingestion/               # MLB Stats API extraction + vector embeddings
+│   ├── dbt/
+│   │   └── wbc_dbt/
+│   │       ├── staging/         # Source standardization, type safety, 1:1 raw landing
+│   │       ├── intermediate/    # Business logic consolidation, deduplication, joins
+│   │       └── mart/            # Kimball dimensional model (dimensions + facts)
+│   ├── dagster/                 # Asset orchestration, lineage, and scheduling
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   ├── entrypoint.sh
+│   └── requirements.txt
 ├── frontend/
-│ ├── src/
-│ │ ├── routes/ # Pages (dashboard, games, players, chat)
-│ │ └── lib/server/ # RAG pipeline + DB client
-├── .github/workflows/ # CI/CD pipelines
+│   ├── src/
+│   │   ├── routes/              # Pages (dashboard, games, players, chat)
+│   │   └── lib/server/          # RAG pipeline + database client
+├── .github/workflows/           # CI/CD pipelines
+├── assets/                      # Architecture diagrams & documentation
 └── README.md
 ```
+
+> ✅ Pipeline follows **standard modern data engineering best practices** with clear separation of concerns across all layers. Each layer has single responsibility, idempotent runs, and built in testing.
 ---
 ## 🎯 What This Project Demonstrates
 

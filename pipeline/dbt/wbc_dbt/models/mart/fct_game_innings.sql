@@ -27,6 +27,8 @@ final as (
         s.game_pk,      -- → dim_games
         s.team_id,      -- → dim_teams
 
+        s.side,
+
         -- inning descriptor (not a measure but intrinsic to the grain)
         s.inning_num,
         s.ordinal_num,

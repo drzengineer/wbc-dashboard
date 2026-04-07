@@ -323,7 +323,7 @@ const TBD_FINAL = { label: "TBD", classes: "bg-surface border border-gold/20 bor
         {#if data.recentGames.length === 0}
             <EmptyState title="No completed games found" />
         {:else}
-            <div class="flex flex-col gap-3">
+            <div class="flex flex-col gap-3 max-w-4xl mx-auto">
                 {#each data.recentGames as game}
                     <GameCard {game} />
                 {/each}

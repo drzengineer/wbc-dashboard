@@ -44,6 +44,10 @@ games as (
         venue_name,
         is_mercy_rule
     from {{ ref('dim_games') }}
+),
+
+innings as (
+    select * from {{ ref('app_game_innings') }}
 )
 
 select
@@ -84,10 +88,23 @@ select
     g.venue_name,
 
     -- Metadata
-    current_timestamp as refreshed_at
+    current_timestamp as refreshed_at,
+
+    -- Inning Breakdown
+    i.away_innings,
+    i.home_innings,
+    
+    -- RHE Totals
+    i.away_r,
+    i.away_h,
+    i.away_e,
+    i.home_r,
+    i.home_h,
+    i.home_e
 
 from games g
 left join away_teams away on g.game_pk = away.game_pk
 left join home_teams home on g.game_pk = home.game_pk
+left join innings i on g.game_pk = i.game_pk
 
 order by g.official_date desc

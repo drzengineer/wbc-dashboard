@@ -33,6 +33,18 @@ export interface GameResult {
 	if_necessary: string | null;
 	away_team_is_placeholder: boolean | null;
 	home_team_is_placeholder: boolean | null;
+
+	// Inning Breakdown
+	away_innings: (number | string)[] | null;
+	home_innings: (number | string)[] | null;
+
+	// RHE Totals
+	away_r: number | null;
+	away_h: number | null;
+	away_e: number | null;
+	home_r: number | null;
+	home_h: number | null;
+	home_e: number | null;
 }
 
 export interface Standing {

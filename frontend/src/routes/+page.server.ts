@@ -93,7 +93,15 @@ export const load: PageServerLoad = async () => {
             home_score,
             home_is_winner,
             is_mercy_rule,
-            venue_name
+            venue_name,
+            away_innings,
+            home_innings,
+            away_r,
+            away_h,
+            away_e,
+            home_r,
+            home_h,
+            home_e
         `)
         .order("official_date", { ascending: false })
         .order("game_pk", { ascending: false });

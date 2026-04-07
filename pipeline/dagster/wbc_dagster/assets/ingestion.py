@@ -13,11 +13,11 @@ import ingest  # type: ignore  # noqa: E402
 
 @multi_asset(
     name="fetch_mlb_data",
-    outs={
-        "games":    AssetOut(key=AssetKey(["raw", "games"])),
-        "players":  AssetOut(key=AssetKey(["raw", "players"])),
-        "schedule": AssetOut(key=AssetKey(["raw", "schedule"])),
-    },
+outs={
+    "boxscores":    AssetOut(key=AssetKey(["wbc_raw", "raw_wbc__boxscores"])),
+    "players":  AssetOut(key=AssetKey(["wbc_raw", "raw_wbc__players"])),
+    "schedule": AssetOut(key=AssetKey(["wbc_raw", "raw_wbc__schedule"])),
+},
     description=(
         "Runs the MLB Stats API ingestion pipeline. "
         "Scheduled every 5 days to keep the Supabase free tier active."

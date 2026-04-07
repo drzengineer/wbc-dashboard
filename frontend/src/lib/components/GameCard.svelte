@@ -21,6 +21,7 @@ let isChamp = $derived(game.game_type === "W");
 let label = $derived(roundLabel(game));
 let awayWon = $derived(!!game.away_is_winner);
 let homeWon = $derived(!!game.home_is_winner);
+let hasInnings = $derived(game.away_innings && game.home_innings && game.away_innings.length > 0);
 
 function teamRow(
 	abbr: string | null,
@@ -101,11 +102,35 @@ const sizeClasses = $derived({
 
 		<div class="flex-grow"></div>
 
+		{#if hasInnings}
+		<div class="flex gap-2 items-center mr-3 @max-[600px]:hidden">
+			{#each (index === 0 ? game.away_innings : game.home_innings) as run}
+			{@const runNum = Number(run)}
+			<div class="w-7 text-sm tabular-nums text-center font-medium {runNum > 0 ? 'text-white' : 'text-[#555570]'}">
+				{runNum}
+			</div>
+			{/each}
+			
+			<!-- RHE Totals -->
+			<div class="w-7 text-sm tabular-nums text-center font-medium text-white ml-2">
+				{index === 0 ? game.away_r : game.home_r}
+			</div>
+			<div class="w-7 text-sm tabular-nums text-center font-medium text-[#ccccdd]">
+				{index === 0 ? game.away_h : game.home_h}
+			</div>
+			<div class="w-7 text-sm tabular-nums text-center font-medium text-[#ccccdd]">
+				{index === 0 ? game.away_e : game.home_e}
+			</div>
+		</div>
+		{/if}
+
+		<div class="min-w-[56px]">
 		{#if row.isWinner && game.is_mercy_rule}
 			<span class="text-[10px] font-medium bg-warning/15 text-warning border border-warning/25 rounded px-1.5 py-0.5">
 				Mercy
 			</span>
 		{/if}
+		</div>
 		<span class="text-xl font-bold tabular-nums text-right min-w-[32px] w-[32px] flex-shrink-0 flex items-center justify-end {row.isWinner
 			? (isChamp ? 'text-gold' : 'text-white')
 			: 'text-[#555570]'}">
@@ -113,6 +138,5 @@ const sizeClasses = $derived({
 		</span>
 	</div>
 	{/each}
-
 
 </div>

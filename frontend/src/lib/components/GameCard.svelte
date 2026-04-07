@@ -103,22 +103,22 @@ const sizeClasses = $derived({
 		<div class="flex-grow"></div>
 
 		{#if hasInnings}
-		<div class="flex gap-2 items-center mr-3 @max-[600px]:hidden">
+		<div class="flex gap-2 items-center mr-3">
 			{#each (index === 0 ? game.away_innings : game.home_innings) as run}
 			{@const runNum = Number(run)}
-			<div class="w-7 text-sm tabular-nums text-center font-medium {runNum > 0 ? 'text-white' : 'text-[#555570]'}">
+			<div class="w-7 text-sm tabular-nums text-center font-medium {runNum > 0 ? 'text-white' : 'text-[#555570]'} @max-[850px]:hidden">
 				{runNum}
 			</div>
 			{/each}
 			
 			<!-- RHE Totals -->
-			<div class="w-7 text-sm tabular-nums text-center font-medium text-white ml-2">
+			<div class="w-7 text-sm tabular-nums text-center font-medium text-white ml-2 @max-[600px]:hidden">
 				{index === 0 ? game.away_r : game.home_r}
 			</div>
-			<div class="w-7 text-sm tabular-nums text-center font-medium text-[#ccccdd]">
+			<div class="w-7 text-sm tabular-nums text-center font-medium text-[#ccccdd] @max-[600px]:hidden">
 				{index === 0 ? game.away_h : game.home_h}
 			</div>
-			<div class="w-7 text-sm tabular-nums text-center font-medium text-[#ccccdd]">
+			<div class="w-7 text-sm tabular-nums text-center font-medium text-[#ccccdd] @max-[600px]:hidden">
 				{index === 0 ? game.away_e : game.home_e}
 			</div>
 		</div>

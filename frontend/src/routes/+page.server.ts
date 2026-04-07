@@ -187,6 +187,7 @@ export const load: PageServerLoad = async () => {
         games: gameStats || [],
         pools: finalPools,
         brackets: brackets,
-        recentGames: recentGames || []
+        recentGames: recentGames || [],
+        allGames: allGames || []
     };
 };

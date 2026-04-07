@@ -1,6 +1,7 @@
 # ⚾ World Baseball Classic Data Platform + RAG AI Assistant
 
-A production-grade **data engineering + AI system** for exploring World Baseball Classic data through both a modern dashboard and a natural-language interface.
+Production-grade data engineering + AI system for exploring World Baseball Classic data  
+through both a modern dashboard and natural-language query interface.
 
 🔗 **Live Demo:** https://wbc.davidr.io
 

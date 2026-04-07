@@ -18,13 +18,7 @@ $effect(() => {
     }
 });
 
-// Auto adjust active tab when switching seasons so we never land on a non-existent tab
-$effect(() => {
-    // Ensure active tab is within the available rounds bounds
-    if (activeMobileTab >= bracketRounds.length) {
-        activeMobileTab = Math.max(0, bracketRounds.length - 1);
-    }
-});
+
 
 // Reactive derived metrics - filter on selected season (Svelte 5 Runes)
 const filteredGames = $derived(data.games.filter(g => g.season === selectedSeason));
@@ -103,7 +97,10 @@ const TBD_FINAL = { label: "TBD", classes: "bg-surface border border-gold/20 bor
         <p class="text-sm text-[#8888a0] mt-1">World Baseball Classic Overview</p>
     </div>
 
-    <SeasonTabs seasons={data.seasons} selected={selectedSeason} onSelect={(s) => selectedSeason = s} />
+<SeasonTabs seasons={data.seasons} selected={selectedSeason} onSelect={(s) => {
+    selectedSeason = s;
+    activeMobileTab = 0;
+}} />
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
 

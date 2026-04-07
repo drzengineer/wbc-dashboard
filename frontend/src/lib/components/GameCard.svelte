@@ -1,5 +1,4 @@
 <script lang="ts">
-import type { GameResult } from "$lib/types";
 import { fmtDate, fmtDateFull, roundBadgeClass, roundLabel } from "$lib/utils";
 import Flag from "./Flag.svelte";
 
@@ -11,7 +10,7 @@ let {
 	showFullDate = false,
 	size = 'standard' as CardSize,
 }: {
-	game: GameResult;
+	game: any;
 	compact?: boolean;
 	showFullDate?: boolean;
 	size?: CardSize;
@@ -73,7 +72,7 @@ const sizeClasses = $derived({
 			{showFullDate ? fmtDateFull(game.official_date) : fmtDate(game.official_date)}
 		</span>
 
-		<span class="border rounded px-2.5 py-0.5 font-medium text-center text-xs overflow-hidden whitespace-nowrap text-ellipsis {roundBadgeClass(label)} min-w-[110px] text-center mx-2">
+		<span class="border rounded px-2.5 py-0.5 font-medium text-center text-xs overflow-hidden whitespace-nowrap text-ellipsis {roundBadgeClass(label)} min-w-27.5 text-center mx-2">
 			{label}
 		</span>
 
@@ -87,55 +86,70 @@ const sizeClasses = $derived({
 	</div>
 
 	{#each rows as row, index}
-	<div class="flex items-center justify-between w-full gap-2 {row.isWinner ? 'bg-surface-hover' : ''}
+	<div class="flex items-center w-full {row.isWinner ? 'bg-surface-hover' : ''}
 		{index > 0 ? 'border-t border-border/50' : ''}
 		{size === 'qf' ? 'px-4 py-2.5' : size === 'sf' ? 'px-5 py-3' : size === 'championship' ? 'px-6 py-4' : 'px-5 py-3'}">
-		<div class="flex items-center gap-3">
+		
+		<!-- LEFT ZONE: Team Info - FIXED WIDTH (balanced symmetrically with right zone) -->
+		<div class="flex items-center gap-3 shrink-0 min-w-60 @max-[600px]:min-w-0">
 			<Flag country={row.abbr} size="lg" />
-			<span class="text-sm font-semibold min-w-[52px] w-[52px] flex-shrink-0 {row.isWinner ? 'text-white' : 'text-[#8888a0]'}">
+			<span class="text-sm font-semibold min-w-13 w-13 shrink-0 {row.isWinner ? 'text-white' : 'text-[#8888a0]'}">
 				{row.abbr}
 			</span>
-			<span class="text-sm min-w-[120px] @max-[420px]:hidden {row.isWinner ? 'text-[#ccccdd]' : 'text-[#777790]'}">
+			<span class="text-sm min-w-30 @max-[420px]:hidden {row.isWinner ? 'text-[#ccccdd]' : 'text-[#777790]'}">
 				{row.fullName ?? row.name ?? ''}
 			</span>
 		</div>
 
-		<div class="flex-grow"></div>
+		<!-- LEFT FLEX GAP: This space grows/shrinks (minimum safety width) -->
+		<div class="grow"></div>
 
+		<!-- MIDDLE ZONE: Innings columns - FIXED WIDTH -->
 		{#if hasInnings}
-		<div class="flex gap-2 items-center mr-3">
+		<div class="flex gap-2 items-center shrink-0">
 			{#each (index === 0 ? game.away_innings : game.home_innings) as run}
 			{@const runNum = Number(run)}
 			<div class="w-7 text-sm tabular-nums text-center font-medium {runNum > 0 ? 'text-white' : 'text-[#555570]'} @max-[850px]:hidden">
 				{runNum}
 			</div>
 			{/each}
-			
-			<!-- RHE Totals -->
-			<div class="w-7 text-sm tabular-nums text-center font-medium text-white ml-2 @max-[600px]:hidden">
-				{index === 0 ? game.away_r : game.home_r}
-			</div>
-			<div class="w-7 text-sm tabular-nums text-center font-medium text-[#ccccdd] @max-[600px]:hidden">
-				{index === 0 ? game.away_h : game.home_h}
-			</div>
-			<div class="w-7 text-sm tabular-nums text-center font-medium text-[#ccccdd] @max-[600px]:hidden">
-				{index === 0 ? game.away_e : game.home_e}
-			</div>
 		</div>
 		{/if}
 
-		<div class="min-w-[56px]">
-		{#if row.isWinner && game.is_mercy_rule}
-			<span class="text-[10px] font-medium bg-warning/15 text-warning border border-warning/25 rounded px-1.5 py-0.5">
-				Mercy
+		<!-- RIGHT FLEX GAP: This space grows/shrinks (minimum safety width) -->
+		<div class="grow"></div>
+
+		<!-- RIGHT ZONE: RHE + Mercy + Score - FIXED WIDTH -->
+		<div class="flex items-center gap-2 shrink-0 justify-end min-w-60 @max-[600px]:min-w-0">
+			{#if hasInnings}
+			<div class="flex items-center gap-2 shrink-0">
+				<!-- RHE Totals -->
+				<div class="w-7 text-sm tabular-nums text-center font-medium text-white @max-[600px]:hidden">
+					{index === 0 ? game.away_r : game.home_r}
+				</div>
+				<div class="w-7 text-sm tabular-nums text-center font-medium text-[#ccccdd] @max-[600px]:hidden">
+					{index === 0 ? game.away_h : game.home_h}
+				</div>
+				<div class="w-7 text-sm tabular-nums text-center font-medium text-[#ccccdd] @max-[600px]:hidden">
+					{index === 0 ? game.away_e : game.home_e}
+				</div>
+			</div>
+			{/if}
+
+			<div class="min-w-14 text-right shrink-0">
+			{#if row.isWinner && game.is_mercy_rule}
+				<span class="text-[10px] font-medium bg-warning/15 text-warning border border-warning/25 rounded px-1.5 py-0.5">
+					Mercy
+				</span>
+			{/if}
+			</div>
+			
+			<span class="text-xl font-bold tabular-nums text-right min-w-8 w-8 shrink-0 flex items-center justify-end {row.isWinner
+				? (isChamp ? 'text-gold' : 'text-white')
+				: 'text-[#555570]'}">
+				{row.score ?? '—'}
 			</span>
-		{/if}
 		</div>
-		<span class="text-xl font-bold tabular-nums text-right min-w-[32px] w-[32px] flex-shrink-0 flex items-center justify-end {row.isWinner
-			? (isChamp ? 'text-gold' : 'text-white')
-			: 'text-[#555570]'}">
-			{row.score ?? '—'}
-		</span>
 	</div>
 	{/each}
 

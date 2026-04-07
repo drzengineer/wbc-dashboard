@@ -55,7 +55,8 @@ final as (
         -- group by season to get full-tournament aggregates
         -- group by season + pool to get pool-level aggregates
         season,
-        pool,
+        tournament_round,
+        pool_group,
         series_description,
         series_game_number,
         games_in_series,

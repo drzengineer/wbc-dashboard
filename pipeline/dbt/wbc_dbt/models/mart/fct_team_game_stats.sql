@@ -6,79 +6,106 @@
              All descriptive context (team name, game date, venue, pool, etc.)
              is joined in at the agg layer.
 
-    Source: int_wbc__game_teams (only)
+    Sources: int_wbc__game_teams (team stats per game)
+             int_wbc__games      (tournament context per game)
+
     Grain: game_pk + team_id
+
+    Join note: inner join is intentional. Every game_team row must have a
+               corresponding game record. A missing game would mean broken
+               source data, not a graceful null.
+
+    Tournament context fields:
+      tournament_round  – human-readable round label derived in int_wbc__games
+                          ('Pool Play', 'Round 2', 'Quarterfinal', 'Semifinal', 'Championship')
+      pool_group        – the specific pool or round group for filtering/aggregation
+                          e.g. 'Pool A', 'Pool B', 'Pool 1', 'Pool 2',
+                               'Quarterfinal', 'Semifinal', 'Championship'
 */
 
 with source as (
 
     select
-        game_team_id,
-        game_pk,
-        team_id,
-        team_name,
-        team_abbreviation,
-        side,
-        division_id,
-        division_name,
-        league_name,
-        is_winner,
-        score,
-        hits,
-        runs,
-        errors,
-        left_on_base,
-        batting_plate_appearances,
-        batting_at_bats,
-        batting_runs,
-        batting_hits,
-        batting_doubles,
-        batting_triples,
-        batting_home_runs,
-        batting_rbi,
-        batting_walks,
-        batting_intentional_walks,
-        batting_strikeouts,
-        batting_hit_by_pitch,
-        batting_sac_bunts,
-        batting_sac_flies,
-        batting_stolen_bases,
-        batting_caught_stealing,
-        batting_left_on_base,
-        batting_total_bases,
-        batting_gidp,
-        pitching_outs,
-        pitching_hits_allowed,
-        pitching_runs_allowed,
-        pitching_earned_runs,
-        pitching_home_runs_allowed,
-        pitching_strikeouts,
-        pitching_walks,
-        pitching_intentional_walks,
-        pitching_hit_batsmen,
-        pitching_wild_pitches,
-        pitching_balks,
-        pitching_total_pitches,
-        pitching_balls,
-        pitching_strikes,
-        pitching_batters_faced,
-        pitching_inherited_runners,
-        pitching_inherited_runners_scored,
-        fielding_errors,
-        fielding_assists,
-        fielding_put_outs,
-        fielding_chances,
-        fielding_passed_balls,
-        fielding_pickoffs,
-        ingested_at
-    from {{ ref('int_wbc__game_teams') }}
+        gt.game_team_id,
+        gt.game_pk,
+        gt.team_id,
+        gt.team_name,
+        gt.team_abbreviation,
+        gt.side,
+        gt.is_winner,
+        gt.score,
+        gt.hits,
+        gt.runs,
+        gt.errors,
+        gt.left_on_base,
+
+        -- tournament context from game grain
+        g.season,
+        g.game_type,
+        g.series_description,
+        g.tournament_round,
+        g.pool_group,
+
+        -- batting counts
+        gt.batting_plate_appearances,
+        gt.batting_at_bats,
+        gt.batting_runs,
+        gt.batting_hits,
+        gt.batting_doubles,
+        gt.batting_triples,
+        gt.batting_home_runs,
+        gt.batting_rbi,
+        gt.batting_walks,
+        gt.batting_intentional_walks,
+        gt.batting_strikeouts,
+        gt.batting_hit_by_pitch,
+        gt.batting_sac_bunts,
+        gt.batting_sac_flies,
+        gt.batting_stolen_bases,
+        gt.batting_caught_stealing,
+        gt.batting_left_on_base,
+        gt.batting_total_bases,
+        gt.batting_gidp,
+
+        -- pitching counts
+        gt.pitching_outs,
+        gt.pitching_hits_allowed,
+        gt.pitching_runs_allowed,
+        gt.pitching_earned_runs,
+        gt.pitching_home_runs_allowed,
+        gt.pitching_strikeouts,
+        gt.pitching_walks,
+        gt.pitching_intentional_walks,
+        gt.pitching_hit_batsmen,
+        gt.pitching_wild_pitches,
+        gt.pitching_balks,
+        gt.pitching_total_pitches,
+        gt.pitching_balls,
+        gt.pitching_strikes,
+        gt.pitching_batters_faced,
+        gt.pitching_inherited_runners,
+        gt.pitching_inherited_runners_scored,
+
+        -- fielding counts
+        gt.fielding_errors,
+        gt.fielding_assists,
+        gt.fielding_put_outs,
+        gt.fielding_chances,
+        gt.fielding_passed_balls,
+        gt.fielding_pickoffs,
+
+        gt.ingested_at
+
+    from {{ ref('int_wbc__game_teams') }} gt
+    inner join {{ ref('int_wbc__games') }} g
+        on gt.game_pk = g.game_pk
 
 ),
 
 /*
-    Self-reference to resolve the opponent for each team-game row.
-    Each game has exactly two rows (home + away), so joining where
-    game_pk matches but team_id differs gives us the opponent's score.
+    Self-join to resolve the opponent for each team-game row.
+    Each game has exactly two rows (home + away), so joining on
+    game_pk where team_id differs gives us the opponent's score.
 */
 opponents as (
 
@@ -97,10 +124,21 @@ final as (
         s.game_team_id,
 
         -- foreign keys
-        -- all descriptive attributes for these keys are joined at the agg layer
-        s.game_pk,          -- → dim_games
-        s.team_id,          -- → dim_teams
-        opp.opponent_team_id, -- → dim_teams (join a second time for opponent context)
+        s.game_pk,              -- → dim_games
+        s.team_id,              -- → dim_teams
+        opp.opponent_team_id,   -- → dim_teams (second alias for opponent context)
+
+        -- team identity
+        s.team_name,
+        s.team_abbreviation,
+        s.side,
+
+        -- tournament context
+        s.season,
+        s.game_type,
+        s.series_description,
+        s.tournament_round,
+        s.pool_group,
 
         -- game result measures
         s.is_winner,
@@ -166,7 +204,7 @@ final as (
         s.ingested_at
 
     from source s
-    left join opponents opp
+    inner join opponents opp
         on s.game_pk = opp.game_pk
         and s.team_id != opp.opponent_team_id
 

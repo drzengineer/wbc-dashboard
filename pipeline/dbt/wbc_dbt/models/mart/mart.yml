@@ -39,6 +39,20 @@ models:
                 field: team_id
       - name: opponent_team_id
         description: Foreign key to dim_teams (the opponent).
+      - name: team_name
+        description: Full display name of the team
+      - name: team_abbreviation
+        description: 3 letter team abbreviation code
+      - name: side
+        description: Which side this team occupied in the game ('home' or 'away')
+      - name: season
+        description: WBC tournament year
+      - name: game_type
+        description: Game classification code (F = Final, D = Elimination, L = Pool Play, W = Exhibition)
+      - name: series_description
+        description: Human readable series context
+      - name: pool
+        description: Normalized tournament round. Clean consistent values, Pool A/B/C/D, Pool 1/2/E/F, Quarterfinal, Semifinal, Championship.
       - name: is_winner
         description: Whether this team won the game.
         tests:

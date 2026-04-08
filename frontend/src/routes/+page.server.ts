@@ -1,16 +1,16 @@
 import { supabase } from "$lib/server/db";
 import type { PageServerLoad } from "./$types";
-import type { MainPageData, GameStats, PoolTeam, FullGame } from "$lib/types";
+import type { MainPageData } from "$lib/types";
 
 export const load: PageServerLoad<MainPageData> = async () => {
   // 1. Fetch data in parallel
-  const [stats, standings, results] = await Promise.all([
-    supabase.from("dim_games").select("game_pk, season, pool_group, is_one_run_game, is_mercy_rule, run_margin, total_runs"),
+  const [standings, results] = await Promise.all([
     supabase.from("app_pool_standings").select("*"),
     supabase.from("app_game_results").select("*")
   ]);
 
   const allGames = results.data ?? [];
+  const seasons = [...new Set(allGames.map(g => g.season))];
 
   // 2. Group Pools by Season and Group Name
   const pools: MainPageData["pools"] = {};
@@ -30,7 +30,7 @@ export const load: PageServerLoad<MainPageData> = async () => {
     else if (game.round_label === "Championship") b.final = game;
   });
 
-  // 4. Calculate Season Totals (DRY approach)
+  // 4. Calculate Season Totals
   const seasonTeamTotals: MainPageData["seasonTeamTotals"] = {};
   allGames.forEach(game => {
     seasonTeamTotals[game.season] ??= {};
@@ -49,8 +49,7 @@ export const load: PageServerLoad<MainPageData> = async () => {
   });
 
   return {
-    seasons: [...new Set(allGames.map(g => g.season))],
-    games: stats.data ?? [],
+    seasons,
     pools,
     brackets,
     recentGames: allGames.slice(0, 10),

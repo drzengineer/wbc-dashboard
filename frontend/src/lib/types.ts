@@ -1,15 +1,5 @@
 // ─── WBC Dashboard Types ─────────────────────────────────────────────────────
 
-export type GameStats = {
-  game_pk: number;
-  season: number;
-  pool_group: string;
-  is_one_run_game: boolean;
-  is_mercy_rule: boolean;
-  run_margin: number;
-  total_runs: number;
-};
-
 export type PoolTeam = {
   season: number;
   pool_group: string;
@@ -31,7 +21,6 @@ export type FullGame = {
   game_type: string;
   round_label: string;
   round_order: number;
-  series_game_number: number;
   away_team_name: string;
   away_team_abbreviation: string;
   away_score: number;
@@ -50,6 +39,10 @@ export type FullGame = {
   home_r: number;
   home_h: number;
   home_e: number;
+  pool_group: string | null;
+  is_one_run_game: boolean;
+  run_margin: number;
+  total_runs: number;
 };
 
 export type Bracket = {
@@ -68,7 +61,6 @@ export type SeasonTeamTotal = {
 
 export type MainPageData = {
   seasons: number[];
-  games: GameStats[];
   pools: Record<string, Record<string, PoolTeam[]>>;
   brackets: Record<string, Bracket>;
   recentGames: FullGame[];

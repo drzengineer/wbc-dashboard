@@ -40,9 +40,12 @@ games as (
         official_date,
         season,
         game_type,
-        series_game_number,
         venue_name,
-        is_mercy_rule
+        is_mercy_rule,
+        pool_group, 
+        is_one_run_game, 
+        run_margin, 
+        total_runs
     from {{ ref('dim_games') }}
 ),
 
@@ -69,7 +72,6 @@ select
         when 'Championship'      then 5
         else 0
     end as round_order,
-    series_game_number,
 
     -- Away Team
     away.team_name as away_team_name,
@@ -86,6 +88,10 @@ select
     -- Game Attributes
     g.is_mercy_rule,
     g.venue_name,
+    g.pool_group, 
+    g.is_one_run_game, 
+    g.run_margin, 
+    g.total_runs,
 
     -- Metadata
     current_timestamp as refreshed_at,

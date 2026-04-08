@@ -21,7 +21,7 @@ $effect(() => {
 });
 
 // ─── Derived UI Metrics ──────────────────────────────────────────────────────
-const currentGames = $derived(data.games.filter(g => g.season === selectedSeason));
+const currentGames = $derived(data.allGames.filter(g => g.season === selectedSeason));
 const totalGames = $derived(currentGames.length);
 
 const oneRunGames = $derived(currentGames.filter(g => g.is_one_run_game).length);

@@ -68,7 +68,7 @@ const compareStat = (val: number, opp: number, type: 'away' | 'home', invert = f
 };
 
 // ─── Pivoted Stat Definitions ──────────────────────────────────────────────────
-const teamBattingStats = [
+const teamBattingStats = $derived([
   { l: 'R', a: game.away_team.batting.runs, h: game.home_team.batting.runs },
   { l: 'H', a: game.away_team.batting.hits, h: game.home_team.batting.hits },
   { l: '2B', a: game.away_team.batting.doubles, h: game.home_team.batting.doubles },
@@ -82,9 +82,9 @@ const teamBattingStats = [
   { l: 'TB', a: game.away_team.batting.tb, h: game.home_team.batting.tb },
   { l: 'LOB', a: game.away_team.batting.lob, h: game.home_team.batting.lob, inv: true },
   { l: 'GIDP', a: game.away_team.batting.gidp, h: game.home_team.batting.gidp, inv: true }
-];
+]);
 
-const teamPitchingStats = [
+const teamPitchingStats = $derived([
   { l: 'IP', a: game.away_team.pitching.outs, h: game.home_team.pitching.outs, aS: ip(game.away_team.pitching.outs), hS: ip(game.home_team.pitching.outs) },
   { l: 'Pit', a: game.away_team.pitching.total_pitches, h: game.home_team.pitching.total_pitches },
   { l: 'Str', a: game.away_team.pitching.strikes, h: game.home_team.pitching.strikes },
@@ -97,16 +97,16 @@ const teamPitchingStats = [
   { l: 'HBP', a: game.away_team.pitching.hbp, h: game.home_team.pitching.hbp, inv: true },
   { l: 'WP', a: game.away_team.pitching.wp, h: game.home_team.pitching.wp, inv: true },
   { l: 'BF', a: game.away_team.pitching.bf, h: game.home_team.pitching.bf }
-];
+]);
 
-const teamFieldingStats = [
+const teamFieldingStats = $derived([
   { l: 'E', a: game.away_team.fielding.errors, h: game.home_team.fielding.errors, inv: true },
   { l: 'Ast', a: game.away_team.fielding.assists, h: game.home_team.fielding.assists },
   { l: 'PO', a: game.away_team.fielding.put_outs, h: game.home_team.fielding.put_outs },
   { l: 'Ch', a: game.away_team.fielding.chances, h: game.home_team.fielding.chances },
   { l: 'PB', a: game.away_team.fielding.passed_balls, h: game.home_team.fielding.passed_balls, inv: true },
   { l: 'PK', a: game.away_team.fielding.pickoffs, h: game.home_team.fielding.pickoffs }
-];
+]);
 </script>
 
 <div class="bg-surface border border-border rounded-xl overflow-hidden animate-fade-in shadow-2xl">

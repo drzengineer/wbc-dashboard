@@ -6,6 +6,7 @@ import {
 } from "lucide-svelte";
 import Flag from "$lib/components/Flag.svelte";
 import type { GameSummary, GameDetailRow } from "$lib/types";
+import { roundBadgeClass, roundLabel } from "$lib/utils";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 let { game, onclose }: { game: GameSummary; onclose: () => void } = $props();
@@ -57,9 +58,6 @@ const pct = (n: number | null, d: number | null): string => {
   return `${Math.round((n / d) * 100)}%`;
 };
 
-// ─── Team colour helpers ──────────────────────────────────────────────────────
-const awayColor  = "text-blue-400";
-const homeColor  = "text-rose-400";
 
 // Helper for the new pivoted stat tables
 const compareStat = (val: number, opp: number, type: 'away' | 'home', invert = false) => {
@@ -125,62 +123,78 @@ const teamFieldingStats = $derived([
     </button>
   </div>
 
-  <div class="bg-linear-to-br from-zinc-950 via-zinc-900 to-zinc-950 px-6 py-8 sm:py-10">
-    <div class="grid grid-cols-5 gap-4 items-center max-w-4xl mx-auto">
-
-      <div class="col-span-2 text-center flex flex-col items-center">
-        <div class="text-xs sm:text-sm tracking-widest uppercase text-zinc-500 mb-2">Away</div>
-        <div class="flex items-center gap-3">
-          <Flag country={game.away_team_abbreviation} size="lg" />
-          <div class="text-lg sm:text-xl font-bold {game.away_is_winner ? 'text-white' : 'text-zinc-400'}">
-            {game.away_team_name}
-          </div>
+    <div class="bg-linear-to-br from-zinc-950 via-zinc-900 to-zinc-950 px-6 py-8 sm:py-10 relative overflow-hidden">
+      <!-- Background Away Flag -->
+      <div class="absolute left-30 top-0 bottom-0 flex items-center ">
+        <div class="scale-[17] opacity-8 mask-r-from-0% mask-r-to-100%">
+          <Flag country={game.away_team_abbreviation}/>
         </div>
-        <div class="text-6xl sm:text-[5rem] leading-none font-black tracking-tight mt-2 {game.away_is_winner ? 'text-white' : 'text-zinc-400'}">
-          {game.away_score}
-        </div>
-        {#if game.away_is_winner}
-          <div class="mt-3 text-xs sm:text-sm font-bold tracking-widest uppercase text-zinc-200">WIN</div>
-        {/if}
       </div>
 
-      <div class="text-center space-y-2.5">
+      <!-- Background Home Flag -->
+      <div class="absolute right-30 top-0 bottom-0 flex items-center">
+        <div class="scale-[17] opacity-8 mask-l-from-0% mask-l-to-100%">
+          <Flag country={game.home_team_abbreviation}/>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-5 gap-4 items-center max-w-4xl mx-auto relative">
+
+        <div class="col-span-2 text-center flex flex-col items-center">
+          <div class="text-xs sm:text-sm tracking-widest uppercase text-zinc-500 mb-2">Away</div>
+          <div class="flex items-center gap-3">
+            <Flag country={game.away_team_abbreviation} size="lg" />
+            <div class="text-lg sm:text-xl font-bold whitespace-nowrap {game.away_is_winner ? 'text-white' : 'text-zinc-400'}">
+              {game.away_team_name}
+            </div>
+          </div>
+          <div class="text-6xl sm:text-[5rem] leading-none font-black tracking-tight mt-2 {game.away_is_winner ? 'text-white' : 'text-zinc-400'}">
+            {game.away_score}
+          </div>
+          {#if game.away_is_winner}
+            <div class="mt-3 text-xs sm:text-sm font-bold tracking-widest uppercase text-zinc-200">WIN</div>
+          {:else}<div class="mt-3 text-xs sm:text-sm font-bold tracking-widest uppercase text-zinc-200">LOSE</div>{/if}
+        </div>
+
+        <div class="text-center space-y-6">
         <div class="flex items-center justify-center gap-1.5 text-sm text-zinc-400">
           <Calendar class="w-4 h-4" />{game.official_date}
         </div>
         <div class="flex items-center justify-center gap-1.5 text-sm text-zinc-500">
           <MapPin class="w-4 h-4" />{game.venue_name}
         </div>
-        <div class="text-xs sm:text-sm font-medium text-purple-300 bg-purple-950/50 rounded-full px-4 py-1 inline-block mt-2">
-          {game.round_label}{(game.pool_group && game.pool_group.toLowerCase().includes('pool')) ? ` · ${game.pool_group}` : ''}
+        <span class="border rounded-full px-3 py-1 font-medium text-center {roundBadgeClass(roundLabel(game))}">
+          {roundLabel(game)}{(game.pool_group && game.pool_group.toLowerCase().includes('pool')) ? ` · ${game.pool_group}` : ''}
+        </span>
+        <div class="flex flex-col items-center gap-2 mt-2">
+          {#if game.is_mercy_rule}
+            <span class="font-medium bg-warning/15 text-warning border border-warning/25 rounded-full px-3 py-.5 inline-block">
+              Mercy Rule
+            </span>
+          {/if}
+          {#if game.is_one_run_game}
+            <span class="font-medium bg-warning/15 text-warning border border-warning/25 rounded-full px-3 py-.5 inline-block">
+              1-Run Game
+            </span>
+          {/if}
         </div>
-        {#if game.is_mercy_rule}
-          <div class="text-xs sm:text-sm font-bold uppercase tracking-widest text-orange-400 bg-orange-950/40 rounded-full px-3 py-1 inline-block">
-            Mercy Rule
-          </div>
-        {/if}
-        {#if game.is_one_run_game}
-          <div class="text-xs sm:text-sm font-semibold uppercase tracking-widest text-yellow-400 block mt-1">
-            1-Run Game
-          </div>
-        {/if}
-      </div>
+        </div>
 
-      <div class="col-span-2 text-center flex flex-col items-center">
-        <div class="text-xs sm:text-sm tracking-widest uppercase text-zinc-500 mb-2">Home</div>
-        <div class="flex items-center gap-3">
-          <div class="text-lg sm:text-xl font-bold {game.home_is_winner ? 'text-white' : 'text-zinc-400'}">
-            {game.home_team_name}
+        <div class="col-span-2 text-center flex flex-col items-center">
+          <div class="text-xs sm:text-sm tracking-widest uppercase text-zinc-500 mb-2">Home</div>
+          <div class="flex items-center gap-3">
+            <div class="text-lg sm:text-xl font-bold whitespace-nowrap {game.home_is_winner ? 'text-white' : 'text-zinc-400'}">
+              {game.home_team_name}
+            </div>
+            <Flag country={game.home_team_abbreviation} size="lg" />
           </div>
-          <Flag country={game.home_team_abbreviation} size="lg" />
+          <div class="text-6xl sm:text-[5rem] leading-none font-black tracking-tight mt-2 {game.home_is_winner ? 'text-white' : 'text-zinc-400'}">
+            {game.home_score}
+          </div>
+          {#if game.home_is_winner}
+            <div class="mt-3 text-xs sm:text-sm font-bold tracking-widest uppercase text-zinc-200">WIN</div>
+          {:else}<div class="mt-3 text-xs sm:text-sm font-bold tracking-widest uppercase text-zinc-200">LOSE</div>{/if}
         </div>
-        <div class="text-6xl sm:text-[5rem] leading-none font-black tracking-tight mt-2 {game.home_is_winner ? 'text-white' : 'text-zinc-400'}">
-          {game.home_score}
-        </div>
-        {#if game.home_is_winner}
-          <div class="mt-3 text-xs sm:text-sm font-bold tracking-widest uppercase text-zinc-200">WIN</div>
-        {:else}<div class="mt-3 text-xs sm:text-sm font-bold tracking-widest uppercase text-zinc-200">LOSE</div>{/if}
-      </div>
     </div>
   </div>
 
@@ -211,8 +225,8 @@ const teamFieldingStats = $derived([
           </thead>
           <tbody>
             <tr class="border-b border-zinc-800/50">
-              <td class="py-2.5 px-4 font-semibold {awayColor} flex items-center gap-2">
-                <Flag country={game.away_team_abbreviation} size="sm" />
+              <td class="py-2.5 px-4 font-semibold flex items-center gap-3">
+                <Flag country={game.away_team_abbreviation} size="md" />
                 {game.away_team_abbreviation}
               </td>
               {#each game.away_innings as run}
@@ -223,8 +237,8 @@ const teamFieldingStats = $derived([
               <td class="text-center py-2.5 px-3 text-white bg-zinc-800/30">{game.away_e}</td>
             </tr>
             <tr>
-              <td class="py-2.5 px-4 font-semibold {homeColor} flex items-center gap-2">
-                <Flag country={game.home_team_abbreviation} size="sm" />
+              <td class="py-2.5 px-4 font-semibold flex items-center gap-3">
+                <Flag country={game.home_team_abbreviation} size="md" />
                 {game.home_team_abbreviation}
               </td>
               {#each game.home_innings as run}
@@ -244,7 +258,7 @@ const teamFieldingStats = $derived([
   <section class="border-b border-border">
     <button onclick={() => toggle('teamBatting')}
       class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
-      <span class="flex items-center gap-2.5 font-medium text-white">
+      <span class="flex items-center gap-3.5 font-medium text-white">
         <BarChart2 class="w-5 h-5 text-yellow-400" />Team Batting
       </span>
       {#if expanded.teamBatting}<ChevronDown class="w-5 h-5 text-zinc-500" />
@@ -265,8 +279,8 @@ const teamFieldingStats = $derived([
           </thead>
           <tbody>
             <tr class="border-b border-zinc-800/50 hover:bg-zinc-800/20">
-              <td class="py-2.5 px-4 font-semibold {awayColor} flex items-center gap-2">
-                <Flag country={game.away_team_abbreviation} size="sm" />
+              <td class="py-2.5 px-4 font-semibold flex items-center gap-3">
+                <Flag country={game.away_team_abbreviation} size="md" />
                 {game.away_team_abbreviation}
               </td>
               {#each teamBattingStats as s}
@@ -274,8 +288,8 @@ const teamFieldingStats = $derived([
               {/each}
             </tr>
             <tr class="hover:bg-zinc-800/20">
-              <td class="py-2.5 px-4 font-semibold {homeColor} flex items-center gap-2">
-                <Flag country={game.home_team_abbreviation} size="sm" />
+              <td class="py-2.5 px-4 font-semibold flex items-center gap-3">
+                <Flag country={game.home_team_abbreviation} size="md" />
                 {game.home_team_abbreviation}
               </td>
               {#each teamBattingStats as s}
@@ -313,8 +327,8 @@ const teamFieldingStats = $derived([
           </thead>
           <tbody>
             <tr class="border-b border-zinc-800/50 hover:bg-zinc-800/20">
-              <td class="py-2.5 px-4 font-semibold {awayColor} flex items-center gap-2">
-                <Flag country={game.away_team_abbreviation} size="sm" />
+              <td class="py-2.5 px-4 font-semibold flex items-center gap-3">
+                <Flag country={game.away_team_abbreviation} size="md" />
                 {game.away_team_abbreviation}
               </td>
               {#each teamPitchingStats as s}
@@ -322,8 +336,8 @@ const teamFieldingStats = $derived([
               {/each}
             </tr>
             <tr class="hover:bg-zinc-800/20">
-              <td class="py-2.5 px-4 font-semibold {homeColor} flex items-center gap-2">
-                <Flag country={game.home_team_abbreviation} size="sm" />
+              <td class="py-2.5 px-4 font-semibold flex items-center gap-3">
+                <Flag country={game.home_team_abbreviation} size="md" />
                 {game.home_team_abbreviation}
               </td>
               {#each teamPitchingStats as s}
@@ -361,8 +375,8 @@ const teamFieldingStats = $derived([
           </thead>
           <tbody>
             <tr class="border-b border-zinc-800/50 hover:bg-zinc-800/20">
-              <td class="py-2.5 px-4 font-semibold {awayColor} flex items-center gap-2">
-                <Flag country={game.away_team_abbreviation} size="sm" />
+              <td class="py-2.5 px-4 font-semibold flex items-center gap-3">
+                <Flag country={game.away_team_abbreviation} size="md" />
                 {game.away_team_abbreviation}
               </td>
               {#each teamFieldingStats as s}
@@ -370,8 +384,8 @@ const teamFieldingStats = $derived([
               {/each}
             </tr>
             <tr class="hover:bg-zinc-800/20">
-              <td class="py-2.5 px-4 font-semibold {homeColor} flex items-center gap-2">
-                <Flag country={game.home_team_abbreviation} size="sm" />
+              <td class="py-2.5 px-4 font-semibold flex items-center gap-3">
+                <Flag country={game.home_team_abbreviation} size="md" />
                 {game.home_team_abbreviation}
               </td>
               {#each teamFieldingStats as s}
@@ -390,8 +404,8 @@ const teamFieldingStats = $derived([
     <button onclick={() => toggle('awayLineup')}
       class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
       <span class="flex items-center gap-2.5 font-medium text-white">
-        <Users class="w-5 h-5 {awayColor}" />
-        <span class="{awayColor}">{game.away_team_abbreviation}</span>&nbsp;Batting Lineup
+        <Users class="w-5 h-5 text-zinc-400" />
+        <span class="text-zinc-300">{game.away_team_abbreviation}</span>&nbsp;Batting Lineup
       </span>
       {#if expanded.awayLineup}<ChevronDown class="w-5 h-5 text-zinc-500" />
       {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
@@ -421,7 +435,7 @@ const teamFieldingStats = $derived([
         <tbody>
           {#each startingBatters(game.away_team_id) as p}
           <tr class="border-b border-zinc-800/50 hover:bg-zinc-800/20">
-            <td class="py-2.5 px-4 text-white font-semibold flex items-center gap-2">
+            <td class="py-2.5 px-4 text-white font-semibold flex items-center gap-3">
               <span class="text-zinc-500 w-4 text-right shrink-0">{p.batting_order}</span>
               <span class="text-zinc-400 font-mono text-xs w-6 shrink-0">{p.primary_position_abbreviation ?? ''}</span>
               <span class="truncate">
@@ -456,7 +470,7 @@ const teamFieldingStats = $derived([
           {#if expanded.awayBench}
             {#each benchPlayers(game.away_team_id) as p}
             <tr class="border-b border-zinc-800/30 bg-zinc-900/20">
-              <td class="py-2 px-4 text-zinc-400 font-medium flex items-center gap-2">
+              <td class="py-2 px-4 text-zinc-400 font-medium flex items-center gap-3">
                 <span class="text-zinc-600 w-4 text-right shrink-0">—</span>
                 <span class="text-zinc-500 font-mono text-xs w-6 shrink-0">{p.primary_position_abbreviation ?? ''}</span>
                 <span class="truncate">{p.boxscore_name ?? p.full_name ?? '—'}</span>
@@ -490,8 +504,8 @@ const teamFieldingStats = $derived([
     <button onclick={() => toggle('homeLineup')}
       class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
       <span class="flex items-center gap-2.5 font-medium text-white">
-        <Users class="w-5 h-5 {homeColor}" />
-        <span class="{homeColor}">{game.home_team_abbreviation}</span>&nbsp;Batting Lineup
+        <Users class="w-5 h-5 text-zinc-400" />
+        <span class="text-zinc-300">{game.home_team_abbreviation}</span>&nbsp;Batting Lineup
       </span>
       {#if expanded.homeLineup}<ChevronDown class="w-5 h-5 text-zinc-500" />
       {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
@@ -521,7 +535,7 @@ const teamFieldingStats = $derived([
         <tbody>
           {#each startingBatters(game.home_team_id) as p}
           <tr class="border-b border-zinc-800/50 hover:bg-zinc-800/20">
-            <td class="py-2.5 px-4 text-white font-semibold flex items-center gap-2">
+            <td class="py-2.5 px-4 text-white font-semibold flex items-center gap-3">
               <span class="text-zinc-500 w-4 text-right shrink-0">{p.batting_order}</span>
               <span class="text-zinc-400 font-mono text-xs w-6 shrink-0">{p.primary_position_abbreviation ?? ''}</span>
               <span class="truncate">
@@ -556,7 +570,7 @@ const teamFieldingStats = $derived([
           {#if expanded.homeBench}
             {#each benchPlayers(game.home_team_id) as p}
             <tr class="border-b border-zinc-800/30 bg-zinc-900/20">
-              <td class="py-2 px-4 text-zinc-400 font-medium flex items-center gap-2">
+              <td class="py-2 px-4 text-zinc-400 font-medium flex items-center gap-3">
                 <span class="text-zinc-600 w-4 text-right shrink-0">—</span>
                 <span class="text-zinc-500 font-mono text-xs w-6 shrink-0">{p.primary_position_abbreviation ?? ''}</span>
                 <span class="truncate">{p.boxscore_name ?? p.full_name ?? '—'}</span>
@@ -591,7 +605,7 @@ const teamFieldingStats = $derived([
       class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
       <span class="flex items-center gap-2.5 font-medium text-white">
         <Zap class="w-5 h-5 text-yellow-400" />
-        <span class="{awayColor}">{game.away_team_abbreviation}</span>&nbsp;Pitching
+        <span class="text-zinc-300">{game.away_team_abbreviation}</span>&nbsp;Pitching
       </span>
       {#if expanded.awayPitching}<ChevronDown class="w-5 h-5 text-zinc-500" />
       {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
@@ -620,7 +634,7 @@ const teamFieldingStats = $derived([
         <tbody>
           {#each pitchers(game.away_team_id) as p}
           <tr class="border-b border-zinc-800/50 hover:bg-zinc-800/20">
-            <td class="py-2.5 px-4 text-white font-semibold flex items-center gap-2">
+            <td class="py-2.5 px-4 text-white font-semibold flex items-center gap-3">
               <span class="truncate">
                 {p.boxscore_name ?? p.full_name ?? '—'}
               </span>
@@ -660,7 +674,7 @@ const teamFieldingStats = $derived([
       class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
       <span class="flex items-center gap-2.5 font-medium text-white">
         <Zap class="w-5 h-5 text-yellow-400" />
-        <span class="{homeColor}">{game.home_team_abbreviation}</span>&nbsp;Pitching
+        <span class="text-zinc-300">{game.home_team_abbreviation}</span>&nbsp;Pitching
       </span>
       {#if expanded.homePitching}<ChevronDown class="w-5 h-5 text-zinc-500" />
       {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
@@ -689,7 +703,7 @@ const teamFieldingStats = $derived([
         <tbody>
           {#each pitchers(game.home_team_id) as p}
           <tr class="border-b border-zinc-800/50 hover:bg-zinc-800/20">
-            <td class="py-2.5 px-4 text-white font-semibold flex items-center gap-2">
+            <td class="py-2.5 px-4 text-white font-semibold flex items-center gap-3">
               <span class="truncate">
                 {p.boxscore_name ?? p.full_name ?? '—'}
               </span>

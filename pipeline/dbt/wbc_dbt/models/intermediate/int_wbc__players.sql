@@ -50,13 +50,13 @@ final as (
 
         -- name fields
         -- full_name is the canonical display name used across all mart models
-        full_name,
-        first_name,
-        middle_name,
-        last_name,
-        use_name,
-        use_last_name,
-        boxscore_name,
+        trim(both '"' from full_name)          as full_name,
+        trim(both '"' from first_name)         as first_name,
+        trim(both '"' from middle_name)        as middle_name,
+        trim(both '"' from last_name)          as last_name,
+        trim(both '"' from use_name)           as use_name,
+        trim(both '"' from use_last_name)      as use_last_name,
+        trim(both '"' from boxscore_name)      as boxscore_name,
 
         -- biographical information
         birth_date::date                    as birth_date,
@@ -82,9 +82,9 @@ final as (
         -- note: per-game positions live on fct_player_game_stats
         -- because players can play multiple positions across games
         primary_position_code,
-        primary_position_name,
-        primary_position_type,
-        primary_position_abbreviation,
+        trim(both '"' from primary_position_name)      as primary_position_name,
+        trim(both '"' from primary_position_type)      as primary_position_type,
+        trim(both '"' from primary_position_abbreviation) as primary_position_abbreviation,
 
         -- strike zone measurements (used by pitching analysis)
         strike_zone_top,

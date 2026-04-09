@@ -105,7 +105,7 @@ const TBD_CLASSES = "bg-surface border border-[#333348] border-dashed rounded-xl
                 <div class="grid grid-cols-[auto_auto_auto] grid-rows-3 gap-5 py-6">
 
                     <div class="flex items-center">
-                        <div class="w-full min-w-50 max-w-68.75">
+                        <div class="w-full min-w-50 max-w-63">
                             {#if bracket.qf[3]}<GameCard game={bracket.qf[3]} size="qf" />{/if}
                         </div>
                     </div>
@@ -120,31 +120,31 @@ const TBD_CLASSES = "bg-surface border border-[#333348] border-dashed rounded-xl
                     </div>
                     
                     <div class="flex items-center justify-end">
-                        <div class="w-full min-w-50 max-w-68.75">
+                        <div class="w-full min-w-50 max-w-63">
                             {#if bracket.qf[0]}<GameCard game={bracket.qf[0]} size="qf" />{/if}
                         </div>
                     </div>
 
                     <div class="flex items-center justify-end">
-                        <div class="w-full min-w-50 max-w-75">
+                        <div class="w-full min-w-50 max-w-67">
                             {#if bracket.sf[1]}<GameCard game={bracket.sf[1]} size="sf" />{/if}
                         </div>
                     </div>
 
                     <div class="flex items-center justify-center">
-                        <div class="w-full min-w-50 max-w-87.5">
+                        <div class="w-full min-w-50 max-w-75">
                             {#if bracket.final}<GameCard game={bracket.final} size="championship" />{/if}
                         </div>
                     </div>
                     
                     <div class="flex items-center">
-                        <div class="w-full min-w-50 max-w-75">
+                        <div class="w-full min-w-50 max-w-67">
                             {#if bracket.sf[0]}<GameCard game={bracket.sf[0]} size="sf" />{/if}
                         </div>
                     </div>
 
                     <div class="flex items-center">
-                        <div class="w-full min-w-50 max-w-68.75">
+                        <div class="w-full min-w-50 max-w-63">
                             {#if bracket.qf[2]}<GameCard game={bracket.qf[2]} size="qf" />{/if}
                         </div>
                     </div>
@@ -152,7 +152,7 @@ const TBD_CLASSES = "bg-surface border border-[#333348] border-dashed rounded-xl
                     <div></div>
                     
                     <div class="flex items-center justify-end">
-                        <div class="w-full min-w-50 max-w-68.75">
+                        <div class="w-full min-w-50 max-w-63">
                             {#if bracket.qf[1]}<GameCard game={bracket.qf[1]} size="qf" />{/if}
                         </div>
                     </div>

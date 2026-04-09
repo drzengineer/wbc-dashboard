@@ -93,7 +93,7 @@ const sizeClasses = $derived({
 		<!-- LEFT ZONE: Team Info - FIXED WIDTH (balanced symmetrically with right zone) -->
 		<div class="flex items-center gap-3 shrink-0 min-w-60 @max-[600px]:min-w-0">
 			<Flag country={row.abbr} size="lg" />
-			<span class="text-sm font-semibold min-w-13 w-13 shrink-0 {row.isWinner ? 'text-white' : 'text-[#8888a0]'}">
+			<span class="text-sm font-semibold min-w-5 w-13 shrink-0 {row.isWinner ? 'text-white' : 'text-[#8888a0]'}">
 				{row.abbr}
 			</span>
 			<span class="text-sm min-w-30 @max-[420px]:hidden {row.isWinner ? 'text-[#ccccdd]' : 'text-[#777790]'}">
@@ -136,7 +136,7 @@ const sizeClasses = $derived({
 			</div>
 			{/if}
 
-			<div class="min-w-14 text-right shrink-0">
+			<div class="min-w-10 text-right shrink-0">
 			{#if row.isWinner && game.is_mercy_rule}
 				<span class="text-[10px] font-medium bg-warning/15 text-warning border border-warning/25 rounded px-1.5 py-0.5">
 					Mercy

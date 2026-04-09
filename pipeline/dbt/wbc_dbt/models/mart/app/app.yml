@@ -1,0 +1,136 @@
+version: 2
+
+# =============================================================================
+# APPLICATION LAYER MODELS
+# =============================================================================
+# Denormalized, frontend-ready models. Pre-joined with dimension attributes
+# optimized for direct consumption by the dashboard UI. No additional joins
+# required at query time. These are the only models the frontend directly queries.
+
+models:
+
+  - name: app_game_results
+    description: >
+      Denormalized game results view optimized for frontend consumption.
+      One row per team per game. Pre-joined with all team, game, and tournament attributes
+      needed for game list views, schedule pages, and result filtering.
+      Grain: game_pk + team_id.
+    columns:
+      - name: game_team_id
+        description: Surrogate primary key.
+      - name: game_pk
+        description: Game identifier.
+      - name: team_id
+        description: Team identifier.
+      - name: opponent_team_id
+        description: Opponent team identifier.
+      - name: team_name
+        description: Full team name.
+      - name: team_abbreviation
+        description: 3 letter team abbreviation.
+      - name: opponent_team_name
+        description: Full opponent team name.
+      - name: opponent_team_abbreviation
+        description: 3 letter opponent team abbreviation.
+      - name: side
+        description: Home or away side.
+      - name: season
+        description: WBC tournament year.
+      - name: game_type
+        description: Game classification code.
+      - name: series_description
+        description: Human readable series context.
+      - name: tournament_round
+        description: Tournament round name.
+      - name: pool_group
+        description: Pool/group identifier.
+      - name: game_date
+        description: Game date and time.
+      - name: official_date
+        description: Official game date for grouping.
+      - name: venue_name
+        description: Game venue name.
+      - name: is_winner
+        description: Win flag for this team.
+      - name: score
+        description: This team's final score.
+      - name: opponent_score
+        description: Opponent's final score.
+      - name: run_differential
+        description: Score minus opponent score.
+      - name: run_margin
+        description: Absolute run difference.
+      - name: is_one_run_game
+        description: Game decided by 1 run flag.
+      - name: is_mercy_rule
+        description: Game ended by mercy rule flag.
+
+  - name: app_pool_standings
+    description: >
+      Pool standings aggregate view. Calculated win/loss records, run differentials,
+      and standings positions per team per pool per season.
+      Optimized for standings table display on frontend.
+      Grain: season + pool_group + team_id.
+    columns:
+      - name: season
+        description: WBC tournament year.
+      - name: pool_group
+        description: Pool/group identifier.
+      - name: team_id
+        description: Team identifier.
+      - name: team_name
+        description: Full team name.
+      - name: team_abbreviation
+        description: 3 letter team abbreviation.
+      - name: games_played
+        description: Total games played in this pool.
+      - name: wins
+        description: Total wins in this pool.
+      - name: losses
+        description: Total losses in this pool.
+      - name: win_percentage
+        description: Winning percentage.
+      - name: runs_scored
+        description: Total runs scored in pool play.
+      - name: runs_allowed
+        description: Total runs allowed in pool play.
+      - name: run_differential
+        description: Total run differential for pool standings.
+      - name: pool_standing
+        description: Position within the pool (1 based).
+      - name: is_qualified
+        description: Flag indicating team advanced from this pool.
+
+  - name: app_game_innings
+    description: >
+      Denormalized inning-by-inning score breakdown view. Pre-joined with team
+      and game attributes for box score display. One row per team per inning per game.
+      Optimized for frontend box score inning lines.
+      Grain: game_pk + team_id + inning_num.
+    columns:
+      - name: game_inning_team_id
+        description: Surrogate primary key.
+      - name: game_pk
+        description: Game identifier.
+      - name: team_id
+        description: Team identifier.
+      - name: team_name
+        description: Full team name.
+      - name: team_abbreviation
+        description: 3 letter team abbreviation.
+      - name: inning_num
+        description: Inning number (1 based).
+      - name: ordinal_num
+        description: Human readable inning label ('1st', '2nd', etc).
+      - name: runs
+        description: Runs scored this inning.
+      - name: hits
+        description: Hits recorded this inning.
+      - name: errors
+        description: Errors committed this inning.
+      - name: left_on_base
+        description: Runners left on base this inning.
+      - name: game_date
+        description: Game date for filtering.
+      - name: season
+        description: WBC tournament year.

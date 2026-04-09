@@ -1,13 +1,178 @@
 version: 2
 
 # =============================================================================
+# DIMENSION TABLES
+# =============================================================================
+# Stable descriptive context tables. All fact tables reference these dimensions
+# by foreign key. No measures live here — only attributes.
+
+models:
+
+  - name: dim_teams
+    description: >
+      Descriptive attributes for every WBC team. Provides the stable "who is this team"
+      context that all fact tables reference by team_id.
+      Grain: one row per team_id.
+      Source: derived from int_wbc__game_teams (most recently seen attributes).
+    columns:
+      - name: team_id
+        description: Primary key for teams. Referenced by all fact tables.
+        tests:
+          - unique
+          - not_null
+      - name: team_name
+        description: Full official display name of the team.
+      - name: team_abbreviation
+        description: Standard 3-letter team abbreviation code.
+      - name: division_id
+        description: Numeric identifier for the team's most recently assigned pool/division.
+      - name: division_name
+        description: Display name for the team's most recently assigned pool/division.
+      - name: league_name
+        description: League classification for this team.
+      - name: ingested_at
+        description: Timestamp when this record was last updated from source data.
+        tests:
+          - not_null
+
+  - name: dim_players
+    description: >
+      Descriptive biographical attributes for every player who appears in WBC data.
+      Provides the stable "who is this player" context that fct_player_game_stats joins to.
+      Uses coalesce pattern to ensure no player is lost even if bio API record is missing.
+      Grain: one row per player_id.
+      Sources: int_wbc__players (primary), int_wbc__game_players (fallback).
+    columns:
+      - name: player_id
+        description: Primary key for players.
+        tests:
+          - unique
+          - not_null
+      - name: active
+        description: Player active status at time of ingestion.
+      - name: is_verified
+        description: Flag indicating player record has been verified in source system.
+      - name: gender
+        description: Player gender.
+      - name: full_name
+        description: Player full legal name.
+      - name: first_name
+        description: Player first name.
+      - name: middle_name
+        description: Player middle name.
+      - name: last_name
+        description: Player last name.
+      - name: use_name
+        description: Preferred common name the player goes by.
+      - name: use_last_name
+        description: Preferred last name the player uses.
+      - name: boxscore_name
+        description: Abbreviated name displayed on game boxscores.
+      - name: birth_date
+        description: Player date of birth.
+      - name: birth_city
+        description: City where player was born.
+      - name: birth_country
+        description: Country where player was born.
+      - name: mlb_debut_date
+        description: Date player made their MLB debut.
+      - name: height
+        description: Player height in inches.
+      - name: weight
+        description: Player weight in pounds.
+      - name: current_age
+        description: Player current age at time of ingestion.
+      - name: bat_side_code
+        description: Code indicating which side the player bats from ('L'/'R'/'S').
+      - name: pitch_hand_code
+        description: Code indicating which hand the player pitches with ('L'/'R').
+      - name: primary_number
+        description: Primary jersey number for this player.
+      - name: primary_position_code
+        description: Standard numeric position code for player's primary position.
+      - name: primary_position_name
+        description: Full name of player's primary position.
+      - name: primary_position_type
+        description: Position classification group (Pitcher, Catcher, Infielder, Outfielder).
+      - name: primary_position_abbreviation
+        description: Standard 1-2 letter position abbreviation.
+      - name: strike_zone_top
+        description: Measured top of player's strike zone for pitch tracking analysis.
+      - name: strike_zone_bottom
+        description: Measured bottom of player's strike zone for pitch tracking analysis.
+      - name: current_team_id
+        description: team_id of the player's current MLB team at time of ingestion.
+      - name: ingested_at
+        description: Timestamp when this record was last updated from source data.
+        tests:
+          - not_null
+
+  - name: dim_games
+    description: >
+      Descriptive attributes for every WBC game. This is the "when, where, and what kind"
+      context that all three fact tables join to.
+      Grain: one row per game_pk.
+      Source: int_wbc__games.
+    columns:
+      - name: game_pk
+        description: Primary key for games. Referenced by all three fact tables.
+        tests:
+          - unique
+          - not_null
+      - name: game_guid
+        description: Universal unique identifier for the game from source API.
+      - name: season
+        description: WBC tournament year.
+      - name: tournament_round
+        description: Tournament round classification.
+      - name: pool_group
+        description: Pool/Group identifier for tournament play.
+      - name: series_description
+        description: Human readable series context.
+      - name: series_game_number
+        description: Game number within the series.
+      - name: games_in_series
+        description: Total number of games in the series.
+      - name: game_type
+        description: Game classification code (F = Final, D = Elimination, L = Pool Play, W = Exhibition).
+      - name: official_date
+        description: Canonical date for grouping and display purposes.
+      - name: game_date
+        description: Full timestamp with timezone for exact game scheduling.
+      - name: day_night
+        description: Indicates if game was played during day or night.
+      - name: venue_id
+        description: Identifier for the venue where the game was played.
+      - name: venue_name
+        description: Display name of the game venue.
+      - name: is_tie
+        description: Flag indicating game ended in a tie.
+      - name: double_header
+        description: Flag indicating this game was part of a double header.
+      - name: if_necessary
+        description: Flag indicating this game was only played if required by series outcome.
+      - name: tiebreaker
+        description: Flag indicating this game was a tiebreaker match.
+      - name: total_runs
+        description: Total runs scored in the game (sum of both team scores).
+      - name: run_margin
+        description: Absolute difference between winning and losing team score.
+      - name: is_one_run_game
+        description: True if the game was decided by exactly 1 run.
+      - name: is_mercy_rule
+        description: True if the game ended early via mercy rule (status_code = 'FM').
+      - name: ingested_at
+        description: Timestamp when this record was last updated from source data.
+        tests:
+          - not_null
+
+
+# =============================================================================
 # FACT TABLES
 # =============================================================================
 # Pure normalized facts. Keys and measures only.
 # Source data comes exclusively from the int layer.
 # No dim attributes are joined here — that happens in the agg layer.
-
-models:
 
   - name: fct_team_game_stats
     description: >
@@ -51,8 +216,10 @@ models:
         description: Game classification code (F = Final, D = Elimination, L = Pool Play, W = Exhibition)
       - name: series_description
         description: Human readable series context
-      - name: pool
-        description: Normalized tournament round. Clean consistent values, Pool A/B/C/D, Pool 1/2/E/F, Quarterfinal, Semifinal, Championship.
+      - name: tournament_round
+        description: Human-readable round label ('Pool Play', 'Round 2', 'Quarterfinal', 'Semifinal', 'Championship')
+      - name: pool_group
+        description: Specific pool or round group for filtering/aggregation (e.g. 'Pool A', 'Semifinal')
       - name: is_winner
         description: Whether this team won the game.
         tests:
@@ -159,18 +326,6 @@ models:
         description: Timestamp when the row was ingested.
         tests:
           - not_null
-
-      - name: total_runs
-        description: Total runs scored in the game (sum of both team scores).
-
-      - name: run_margin
-        description: Absolute difference between winning and losing team score.
-
-      - name: is_one_run_game
-        description: True if the game was decided by exactly 1 run.
-
-      - name: is_mercy_rule
-        description: True if the game ended early, status_code derived (FM = mercy)
 
   - name: fct_player_game_stats
     description: >

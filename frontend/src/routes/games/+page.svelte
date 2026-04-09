@@ -130,12 +130,13 @@ async function openGame(game: FullGame) {
     {:else}
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
             {#each sortedGames as game (game.game_pk)}
-                <div
+                <button
+                    type="button"
                     onclick={() => openGame(game)}
-                    class="cursor-pointer transition-transform hover:scale-[1.02] {selectedGame?.game_pk === game.game_pk ? 'ring-2 ring-accent ring-offset-2 ring-offset-bg rounded-xl' : ''} {loadingGame === game.game_pk ? 'opacity-50 pointer-events-none' : ''}"
+                    class="cursor-pointer transition-transform hover:scale-[1.02] bg-transparent border-none p-0 m-0 {selectedGame?.game_pk === game.game_pk ? 'ring-2 ring-accent ring-offset-2 ring-offset-bg rounded-xl' : ''} {loadingGame === game.game_pk ? 'opacity-50 pointer-events-none' : ''}"
                 >
                     <GameCard {game} showFullDate />
-                </div>
+                </button>
             {/each}
         </div>
     {/if}

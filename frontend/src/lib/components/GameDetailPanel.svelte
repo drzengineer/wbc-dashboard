@@ -1,8 +1,7 @@
 <script lang="ts">
 import {
-  X, Calendar, MapPin, Trophy, Target, Users,
-  ChevronDown, ChevronRight, Zap, Shield, BarChart2,
-  TrendingUp, Activity
+  X, Calendar, MapPin,
+  ChevronDown, ChevronRight
 } from "lucide-svelte";
 import Flag from "$lib/components/Flag.svelte";
 import type { GameSummary, GameDetailRow } from "$lib/types";
@@ -112,7 +111,6 @@ const teamFieldingStats = $derived([
 
   <div class="flex items-center justify-between px-6 py-4 border-b border-border bg-zinc-900/80 backdrop-blur">
     <div class="flex items-center gap-3 text-base font-medium text-white">
-      <Activity class="w-5 h-5 text-blue-400" />
       Game Detail
     </div>
     <button
@@ -202,7 +200,7 @@ const teamFieldingStats = $derived([
     <button onclick={() => toggle('boxscore')}
       class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
       <span class="flex items-center gap-2.5 font-medium text-white">
-        <Target class="w-5 h-5 text-blue-400" />Box Score
+        Box Score
       </span>
       {#if expanded.boxscore}<ChevronDown class="w-5 h-5 text-zinc-500" />
       {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
@@ -214,7 +212,7 @@ const teamFieldingStats = $derived([
         <table class="w-full text-sm sm:text-base min-w-max table-fixed">
           <thead class="bg-zinc-950/50 text-zinc-400 uppercase tracking-wider text-xs sm:text-sm font-medium">
             <tr class="border-b border-zinc-800">
-              <th class="text-left py-3 px-4 w-[180px]">Team</th>
+              <th class="text-left py-3 px-4 w-[250px]">Team</th>
               {#each game.away_innings as _, i}
                 <th class="text-center py-3 px-3 w-9">{i + 1}</th>
               {/each}
@@ -259,7 +257,7 @@ const teamFieldingStats = $derived([
     <button onclick={() => toggle('teamBatting')}
       class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
       <span class="flex items-center gap-3.5 font-medium text-white">
-        <BarChart2 class="w-5 h-5 text-yellow-400" />Team Batting
+        Team Batting
       </span>
       {#if expanded.teamBatting}<ChevronDown class="w-5 h-5 text-zinc-500" />
       {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
@@ -271,7 +269,7 @@ const teamFieldingStats = $derived([
         <table class="w-full text-sm sm:text-base min-w-max table-fixed">
           <thead class="bg-zinc-950/50 text-zinc-400 uppercase tracking-wider text-xs sm:text-sm font-medium">
             <tr class="border-b border-zinc-800">
-              <th class="text-left py-3 px-4 w-[180px]">Team</th>
+              <th class="text-left py-3 px-4 w-[250px]">Team</th>
               {#each teamBattingStats as s}
                 <th class="text-center py-3 px-2">{s.l}</th>
               {/each}
@@ -307,7 +305,7 @@ const teamFieldingStats = $derived([
     <button onclick={() => toggle('teamPitching')}
       class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
       <span class="flex items-center gap-2.5 font-medium text-white">
-        <TrendingUp class="w-5 h-5 text-purple-400" />Team Pitching
+        Team Pitching
       </span>
       {#if expanded.teamPitching}<ChevronDown class="w-5 h-5 text-zinc-500" />
       {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
@@ -319,7 +317,7 @@ const teamFieldingStats = $derived([
         <table class="w-full text-sm sm:text-base min-w-max table-fixed">
           <thead class="bg-zinc-950/50 text-zinc-400 uppercase tracking-wider text-xs sm:text-sm font-medium">
             <tr class="border-b border-zinc-800">
-              <th class="text-left py-3 px-4 w-[180px]">Team</th>
+              <th class="text-left py-3 px-4 w-[250px]">Team</th>
               {#each teamPitchingStats as s}
                 <th class="text-center py-3 px-2">{s.l}</th>
               {/each}
@@ -355,7 +353,7 @@ const teamFieldingStats = $derived([
     <button onclick={() => toggle('teamFielding')}
       class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
       <span class="flex items-center gap-2.5 font-medium text-white">
-        <Shield class="w-5 h-5 text-green-400" />Team Fielding
+        Team Fielding
       </span>
       {#if expanded.teamFielding}<ChevronDown class="w-5 h-5 text-zinc-500" />
       {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
@@ -367,7 +365,7 @@ const teamFieldingStats = $derived([
         <table class="w-full text-sm sm:text-base min-w-max table-fixed">
           <thead class="bg-zinc-950/50 text-zinc-400 uppercase tracking-wider text-xs sm:text-sm font-medium">
             <tr class="border-b border-zinc-800">
-              <th class="text-left py-3 px-4 w-[180px]">Team</th>
+              <th class="text-left py-3 px-4 w-[250px]">Team</th>
               {#each teamFieldingStats as s}
                 <th class="text-center py-3 px-2">{s.l}</th>
               {/each}
@@ -404,7 +402,6 @@ const teamFieldingStats = $derived([
     <button onclick={() => toggle('awayLineup')}
       class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
       <span class="flex items-center gap-2.5 font-medium text-white">
-        <Users class="w-5 h-5 text-zinc-400" />
         <span class="text-zinc-300">{game.away_team_abbreviation}</span>&nbsp;Batting Lineup
       </span>
       {#if expanded.awayLineup}<ChevronDown class="w-5 h-5 text-zinc-500" />
@@ -417,7 +414,7 @@ const teamFieldingStats = $derived([
         <table class="w-full text-sm sm:text-base min-w-max table-fixed">
         <thead class="bg-zinc-950/50">
           <tr class="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-xs sm:text-sm font-medium">
-            <th class="text-left py-3 px-4 w-[180px]">Player</th>
+            <th class="text-left py-3 px-4 w-[250px]">Player</th>
             <th class="text-center py-3 px-2">AB</th>
             <th class="text-center py-3 px-2">R</th>
             <th class="text-center py-3 px-2">H</th>
@@ -504,7 +501,6 @@ const teamFieldingStats = $derived([
     <button onclick={() => toggle('homeLineup')}
       class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
       <span class="flex items-center gap-2.5 font-medium text-white">
-        <Users class="w-5 h-5 text-zinc-400" />
         <span class="text-zinc-300">{game.home_team_abbreviation}</span>&nbsp;Batting Lineup
       </span>
       {#if expanded.homeLineup}<ChevronDown class="w-5 h-5 text-zinc-500" />
@@ -517,7 +513,7 @@ const teamFieldingStats = $derived([
         <table class="w-full text-sm sm:text-base min-w-max table-fixed">
           <thead class="bg-zinc-950/50">
             <tr class="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-xs sm:text-sm font-medium">
-              <th class="text-left py-3 px-4 w-[180px]">Player</th>
+              <th class="text-left py-3 px-4 w-[250px]">Player</th>
               <th class="text-center py-3 px-2">AB</th>
               <th class="text-center py-3 px-2">R</th>
               <th class="text-center py-3 px-2">H</th>
@@ -604,7 +600,6 @@ const teamFieldingStats = $derived([
     <button onclick={() => toggle('awayPitching')}
       class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
       <span class="flex items-center gap-2.5 font-medium text-white">
-        <Zap class="w-5 h-5 text-yellow-400" />
         <span class="text-zinc-300">{game.away_team_abbreviation}</span>&nbsp;Pitching
       </span>
       {#if expanded.awayPitching}<ChevronDown class="w-5 h-5 text-zinc-500" />
@@ -617,7 +612,7 @@ const teamFieldingStats = $derived([
         <table class="w-full text-sm sm:text-base min-w-max table-fixed">
           <thead class="bg-zinc-950/50">
           <tr class="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-xs sm:text-sm font-medium">
-            <th class="text-left py-3 px-4 w-[180px]">Pitcher</th>
+            <th class="text-left py-3 px-4 w-[250px]">Pitcher</th>
             <th class="text-center py-3 px-2">IP</th>
             <th class="text-center py-3 px-2">H</th>
             <th class="text-center py-3 px-2">R</th>
@@ -673,7 +668,6 @@ const teamFieldingStats = $derived([
     <button onclick={() => toggle('homePitching')}
       class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
       <span class="flex items-center gap-2.5 font-medium text-white">
-        <Zap class="w-5 h-5 text-yellow-400" />
         <span class="text-zinc-300">{game.home_team_abbreviation}</span>&nbsp;Pitching
       </span>
       {#if expanded.homePitching}<ChevronDown class="w-5 h-5 text-zinc-500" />
@@ -686,7 +680,7 @@ const teamFieldingStats = $derived([
         <table class="w-full text-sm sm:text-base min-w-max table-fixed">
           <thead class="bg-zinc-950/50">
           <tr class="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-xs sm:text-sm font-medium">
-            <th class="text-left py-3 px-4 w-[180px]">Pitcher</th>
+            <th class="text-left py-3 px-4 w-[250px]">Pitcher</th>
             <th class="text-center py-3 px-2">IP</th>
             <th class="text-center py-3 px-2">H</th>
             <th class="text-center py-3 px-2">R</th>

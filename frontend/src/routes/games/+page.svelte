@@ -1,4 +1,5 @@
 <script lang="ts">
+import { tick } from "svelte";
 import { Filter } from "lucide-svelte";
 import EmptyState from "$lib/components/EmptyState.svelte";
 import FilterPills from "$lib/components/FilterPills.svelte";
@@ -16,6 +17,7 @@ let selectedSeason = $state(0);
 let selectedPool   = $state("All");
 let selectedGame   = $state<GameSummary | null>(null);
 let loadingGame    = $state<number | null>(null);
+let detailContainer = $state<HTMLElement | null>(null);
 
 // Default to most recent season
 $effect(() => {
@@ -71,6 +73,9 @@ async function openGame(game: FullGame) {
     try {
         const res = await fetch(`/api/games/${game.game_pk}`);
         selectedGame = await res.json();
+        
+        await tick();
+        detailContainer?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (e) {
         console.error('Failed to load game details', e);
     } finally {
@@ -100,9 +105,11 @@ async function openGame(game: FullGame) {
 
 
     <!-- Selected Game Detail Panel -->
-    {#if selectedGame}
-    <GameDetailPanel game={selectedGame} onclose={() => (selectedGame = null)} />
-    {/if}
+    <div bind:this={detailContainer}>
+        {#if selectedGame}
+            <GameDetailPanel game={selectedGame} onclose={() => (selectedGame = null)} />
+        {/if}
+    </div>
 
     <!-- Pool filter -->
     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -133,7 +140,7 @@ async function openGame(game: FullGame) {
                 <button
                     type="button"
                     onclick={() => openGame(game)}
-                    class="cursor-pointer transition-transform hover:scale-[1.02] bg-transparent border-none p-0 m-0 {selectedGame?.game_pk === game.game_pk ? 'ring-2 ring-accent ring-offset-2 ring-offset-bg rounded-xl' : ''} {loadingGame === game.game_pk ? 'opacity-50 pointer-events-none' : ''}"
+                    class="cursor-pointer transition-transform hover:scale-[1.02] bg-transparent border-none p-0 m-0 {selectedGame?.game_pk === game.game_pk ? 'ring-1 ring-white/20 rounded-xl' : ''} {loadingGame === game.game_pk ? 'opacity-50 pointer-events-none' : ''}"
                 >
                     <GameCard {game} showFullDate />
                 </button>

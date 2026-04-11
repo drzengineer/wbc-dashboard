@@ -1,8 +1,10 @@
 <script lang="ts">
-import { Check, Copy, Send, Sparkles } from "lucide-svelte";
+import { Check, Copy, Send, Sparkles, X, MessageCircle } from "lucide-svelte";
 import { tick } from "svelte";
 
 type Message = { role: "user" | "assistant"; content: string };
+
+let open = $state(false);
 
 let messages = $state<Message[]>([]);
 let question = $state("");
@@ -81,14 +83,32 @@ const suggestions = [
 ];
 </script>
 
-<div class="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)] max-w-3xl mx-auto animate-fade-in">
-	<div class="mb-4 shrink-0">
-		<h1 class="text-xl md:text-2xl font-bold text-white">AI Chat</h1>
-		<p class="text-sm text-[#8888a0] mt-1">Ask anything about the World Baseball Classic</p>
+{#if open}
+<!-- Backdrop overlay -->
+<div 
+	class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+	onclick={() => open = false}
+></div>
+
+<!-- Chat drawer -->
+<div class="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[420px] bg-[#0a0a0f] border-l border-border shadow-2xl flex flex-col animate-slide-in">
+	<!-- Chat header -->
+	<div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+		<div>
+			<h2 class="text-lg font-bold text-white">AI Chat</h2>
+			<p class="text-xs text-[#8888a0] mt-0.5">Ask anything about the World Baseball Classic</p>
+		</div>
+		<button 
+			type="button" 
+			onclick={() => open = false}
+			class="p-2 rounded-lg text-[#8888a0] hover:text-white hover:bg-surface-hover transition-colors"
+		>
+			<X class="w-5 h-5" />
+		</button>
 	</div>
 
 	<!-- Messages -->
-	<div class="flex-1 overflow-y-auto space-y-4 pr-1 mb-4">
+	<div class="flex-1 overflow-y-auto space-y-4 px-4 py-4">
 		{#if messages.length === 0}
 			<div class="flex flex-col items-center justify-center h-full gap-8 text-center">
 				<div>
@@ -99,7 +119,7 @@ const suggestions = [
 						Ask anything about the World Baseball Classic — stats, results, players, or history.
 					</p>
 				</div>
-				<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
+				<div class="grid grid-cols-1 gap-2 w-full">
 					{#each suggestions as s}
 						<button
 							type="button"
@@ -130,7 +150,7 @@ const suggestions = [
 							<button
 								type="button"
 								onclick={() => copyMessage(i, msg.content)}
-								class="absolute -top-2 -right-2 p-1.5 bg-surface-hover border border-border-light rounded-lg opacity-0 group-hover:opacity-100 transition-opacity text-[#8888a0] hover:text-white"
+								class="absolute -top-2 -right-2 p-1.5 bg-surface-hover border border-border rounded-lg opacity-0 group-hover:opacity-100 transition-opacity text-[#8888a0] hover:text-white"
 								title="Copy"
 							>
 								{#if copiedIndex === i}
@@ -148,25 +168,52 @@ const suggestions = [
 	</div>
 
 	<!-- Input -->
-	<div class="shrink-0 bg-surface border border-border rounded-xl focus-within:border-accent/50 transition-colors">
-		<textarea
-			bind:value={question}
-			onkeydown={handleKeydown}
-			rows="2"
-			placeholder="Ask anything about the WBC..."
-			disabled={loading}
-			class="w-full bg-transparent px-4 pt-3 pb-1 text-sm text-white placeholder-[#555570] resize-none focus:outline-none disabled:opacity-50"
-		></textarea>
-		<div class="flex items-center justify-end px-3 pb-2">
-			<button
-				type="button"
-				onclick={handleSubmit}
-				disabled={loading || !question.trim()}
-				class="px-4 py-1.5 bg-accent hover:bg-accent-hover disabled:opacity-40 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5"
-			>
-				<Send class="w-3.5 h-3.5" />
-				{loading ? 'Thinking…' : 'Send'}
-			</button>
+	<div class="shrink-0 p-4">
+		<div class="bg-surface border border-border rounded-xl focus-within:border-accent/50 transition-colors">
+			<textarea
+				bind:value={question}
+				onkeydown={handleKeydown}
+				rows="2"
+				placeholder="Ask anything about the WBC..."
+				disabled={loading}
+				class="w-full bg-transparent px-4 pt-3 pb-1 text-sm text-white placeholder-[#555570] resize-none focus:outline-none disabled:opacity-50"
+			></textarea>
+			<div class="flex items-center justify-end px-3 pb-2">
+				<button
+					type="button"
+					onclick={handleSubmit}
+					disabled={loading || !question.trim()}
+					class="px-4 py-1.5 bg-accent hover:bg-accent-hover disabled:opacity-40 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5"
+				>
+					<Send class="w-3.5 h-3.5" />
+					{loading ? 'Thinking…' : 'Send'}
+				</button>
+			</div>
 		</div>
 	</div>
 </div>
+{/if}
+
+<!-- Floating toggle button -->
+<button
+	type="button"
+	onclick={() => open = !open}
+	class="fixed bottom-6 right-6 z-30 w-14 h-14 rounded-full bg-accent text-white shadow-lg shadow-accent/30 hover:bg-accent-hover hover:scale-105 transition-all duration-200 flex items-center justify-center"
+	title="Toggle AI Chat"
+>
+	<MessageCircle class="w-6 h-6" />
+</button>
+
+<style>
+@keyframes slide-in {
+	from {
+		transform: translateX(100%);
+	}
+	to {
+		transform: translateX(0);
+	}
+}
+.animate-slide-in {
+	animation: slide-in 0.2s ease-out;
+}
+</style>

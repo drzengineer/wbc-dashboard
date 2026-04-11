@@ -1,7 +1,8 @@
 <script lang="ts">
 import "../app.css";
-import { Calendar, Home, Menu, MessageCircle, Users, X } from "lucide-svelte";
+import { Calendar, Home, Menu, Users, X } from "lucide-svelte";
 import { page } from "$app/state";
+import AIChat from "$lib/components/AIChat.svelte";
 
 const { children } = $props();
 
@@ -11,7 +12,6 @@ const navLinks = [
 	{ href: "/", label: "Dashboard", icon: Home },
 	{ href: "/games", label: "Games", icon: Calendar },
 	{ href: "/players", label: "Players", icon: Users },
-	{ href: "/chat", label: "AI Chat", icon: MessageCircle },
 ];
 
 function isActive(href: string) {
@@ -95,3 +95,5 @@ function closeNav() {
 		{@render children()}
 	</main>
 </div>
+
+<AIChat />

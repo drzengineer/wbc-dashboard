@@ -86,12 +86,12 @@ const suggestions = [
 {#if open}
 <!-- Backdrop overlay -->
 <div 
-	class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+	class="fixed top-[72px] inset-x-0 bottom-0 z-40 bg-black/30"
 	onclick={() => open = false}
 ></div>
 
 <!-- Chat drawer -->
-<div class="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[420px] bg-[#0a0a0f] border-l border-border shadow-2xl flex flex-col animate-slide-in">
+<div class="fixed right-0 top-[72px] bottom-0 z-45 w-full sm:w-[420px] bg-[#0a0a0f] border-l border-border shadow-2xl flex flex-col animate-slide-in">
 	<!-- Chat header -->
 	<div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
 		<div>
@@ -176,7 +176,8 @@ const suggestions = [
 				rows="2"
 				placeholder="Ask anything about the WBC..."
 				disabled={loading}
-				class="w-full bg-transparent px-4 pt-3 pb-1 text-sm text-white placeholder-[#555570] resize-none focus:outline-none disabled:opacity-50"
+				class="w-full bg-transparent px-4 pt-3 pb-1 text-sm text-white placeholder-[#555570] resize-none focus:outline-none focus:ring-0 disabled:opacity-50"
+				style="outline: none !important; box-shadow: none !important;"
 			></textarea>
 			<div class="flex items-center justify-end px-3 pb-2">
 				<button
@@ -201,7 +202,7 @@ const suggestions = [
 	class="fixed bottom-6 right-6 z-30 w-14 h-14 rounded-full bg-accent text-white shadow-lg shadow-accent/30 hover:bg-accent-hover hover:scale-105 transition-all duration-200 flex items-center justify-center"
 	title="Toggle AI Chat"
 >
-	<MessageCircle class="w-6 h-6" />
+	<MessageCircle class="w-6 h-6" style="transform: scaleX(-1);" />
 </button>
 
 <style>

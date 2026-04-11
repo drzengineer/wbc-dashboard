@@ -100,7 +100,7 @@ const TBD_CLASSES = "bg-surface border border-[#333348] border-dashed rounded-xl
             Knockout Bracket
         </h2>
 
-        <div class="relative">
+        <div class="relative max-w-7xl mx-auto">
             <div class="hidden md:block">
                 <div class="grid grid-cols-[auto_auto_auto] grid-rows-3 gap-5 py-6">
 

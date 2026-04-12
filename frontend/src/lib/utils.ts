@@ -23,9 +23,9 @@ export function fmtIp(v: unknown): string {
 export function pct(val: unknown): string {
 	const n = Number(val);
 	if (Number.isNaN(n)) return "—";
-	if (n === 1) return "1.000";
-	if (n === 0) return ".000";
-	return n.toFixed(3).replace("0.", ".");
+	if (n === 1) return "1.00";
+	if (n === 0) return ".00";
+	return n.toFixed(2).replace("0.", ".");
 }
 
 // ─── Date Formatting ──────────────────────────────────────────────────────────

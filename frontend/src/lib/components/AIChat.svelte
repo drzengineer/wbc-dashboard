@@ -78,7 +78,7 @@ async function copyMessage(index: number, content: string) {
 const suggestions = [
 	"Who won the 2023 WBC?",
 	"How did Ohtani do in 2026?",
-	"Which team had the best pool play record?",
+	"how far did USA go in 2013?",
 	"Who hit the most home runs?",
 ];
 </script>
@@ -86,17 +86,16 @@ const suggestions = [
 {#if open}
 <!-- Backdrop overlay -->
 <div 
-	class="fixed top-[72px] inset-x-0 bottom-0 z-40 bg-black/30"
+	class="fixed inset-0 z-40 bg-black/30"
 	onclick={() => open = false}
 ></div>
 
 <!-- Chat drawer -->
-<div class="fixed right-0 top-[72px] bottom-0 z-45 w-full sm:w-[420px] bg-[#0a0a0f] border-l border-border shadow-2xl flex flex-col animate-slide-in">
+<div class="fixed right-0 bottom-0 z-50 w-full sm:w-[85%] md:w-[65%] lg:w-[48%] xl:w-[38%] max-w-[520px] h-[75vh] bg-[#0a0a0f] border border-border rounded-t-xl shadow-2xl flex flex-col animate-slide-in">
 	<!-- Chat header -->
-	<div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+	<div class="flex items-center justify-between px-[4%] py-2.5 border-b border-border shrink-0">
 		<div>
-			<h2 class="text-lg font-bold text-white">AI Chat</h2>
-			<p class="text-xs text-[#8888a0] mt-0.5">Ask anything about the World Baseball Classic</p>
+			<h2 class="text-base font-semibold text-white">AI Chat</h2>
 		</div>
 		<button 
 			type="button" 
@@ -108,7 +107,7 @@ const suggestions = [
 	</div>
 
 	<!-- Messages -->
-	<div class="flex-1 overflow-y-auto space-y-4 px-4 py-4">
+	<div class="flex-1 overflow-y-auto space-y-4 px-[4%] py-4">
 		{#if messages.length === 0}
 			<div class="flex flex-col items-center justify-center h-full gap-8 text-center">
 				<div>
@@ -119,12 +118,12 @@ const suggestions = [
 						Ask anything about the World Baseball Classic — stats, results, players, or history.
 					</p>
 				</div>
-				<div class="grid grid-cols-1 gap-2 w-full">
+				<div class="grid grid-cols-2 gap-2 w-full">
 					{#each suggestions as s}
 						<button
 							type="button"
 							onclick={() => { question = s; handleSubmit(); }}
-							class="text-left px-4 py-3 bg-surface border border-border rounded-xl text-sm text-[#f0f0f5] hover:border-accent/30 hover:text-white transition-all duration-200"
+						class="text-left px-3 py-2.5 bg-surface border border-border rounded-xl text-sm text-[#f0f0f5] hover:border-accent/30 hover:text-white transition-all duration-200"
 						>{s}</button>
 					{/each}
 				</div>
@@ -132,7 +131,7 @@ const suggestions = [
 		{:else}
 			{#each messages as msg, i}
 				<div class="flex {msg.role === 'user' ? 'justify-end' : 'justify-start'}">
-					<div class="max-w-[85%] group relative
+					<div class="max-w-[88%] sm:max-w-[82%] md:max-w-[78%] lg:max-w-[72%] group relative
 						{msg.role === 'user'
 							? 'bg-accent text-white rounded-2xl rounded-br-sm px-4 py-3 text-sm'
 							: 'bg-surface border border-border text-[#f0f0f5] rounded-2xl rounded-bl-sm px-4 py-3 text-sm whitespace-pre-wrap'}">
@@ -168,7 +167,7 @@ const suggestions = [
 	</div>
 
 	<!-- Input -->
-	<div class="shrink-0 p-4">
+	<div class="shrink-0 p-[4%] pb-[calc(env(safe-area-inset-bottom)+1rem)]">
 		<div class="bg-surface border border-border rounded-xl focus-within:border-accent/50 transition-colors">
 			<textarea
 				bind:value={question}
@@ -199,10 +198,10 @@ const suggestions = [
 <button
 	type="button"
 	onclick={() => open = !open}
-	class="fixed bottom-6 right-6 z-30 w-14 h-14 rounded-full bg-accent text-white shadow-lg shadow-accent/30 hover:bg-accent-hover hover:scale-105 transition-all duration-200 flex items-center justify-center"
+	class="fixed bottom-[3%] right-[3%] z-30 w-[clamp(48px,6vw,64px)] h-[clamp(48px,6vw,64px)] rounded-full bg-accent text-white shadow-lg shadow-accent/30 hover:bg-accent-hover hover:scale-105 transition-all duration-200 flex items-center justify-center"
 	title="Toggle AI Chat"
 >
-	<MessageCircle class="w-6 h-6" style="transform: scaleX(-1);" />
+	<MessageCircle class="w-[clamp(20px,3vw,28px)] h-[clamp(20px,3vw,28px)]" style="transform: scaleX(-1);" />
 </button>
 
 <style>

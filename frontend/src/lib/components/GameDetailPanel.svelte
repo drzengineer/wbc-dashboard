@@ -475,14 +475,14 @@ const teamFieldingStats = $derived([
           {/each}
 
           {#if benchPlayers(game.away_team_id).length > 0}
-          <tr>
-            <td class="p-0 border-b border-zinc-800 sticky left-0 bg-zinc-900 border-r border-zinc-800">
-              <button onclick={() => toggle('awayBench')} class="w-full flex items-center py-3 px-4 text-xs font-semibold uppercase tracking-widest text-zinc-400 hover:bg-zinc-800/40 transition-colors bg-zinc-900/30">
+          <tr class="group">
+            <td class="p-0 border-b border-zinc-800 sticky left-0 bg-zinc-900">
+              <button onclick={() => toggle('awayBench')} class="w-full flex items-center py-3 px-4 text-xs font-semibold uppercase tracking-widest text-zinc-400 group-hover:bg-zinc-800/40 transition-colors bg-zinc-900/30">
                 Bench Reserves ({benchPlayers(game.away_team_id).length})
               </button>
             </td>
             <td colspan="12" class="p-0 border-b border-zinc-800 text-right">
-              <button onclick={() => toggle('awayBench')} class="w-full flex items-center justify-end py-3 px-4 text-zinc-400 hover:bg-zinc-800/40 transition-colors bg-zinc-900/30">
+              <button onclick={() => toggle('awayBench')} class="w-full flex items-center justify-end py-3 px-4 text-zinc-400 group-hover:bg-zinc-800/40 transition-colors bg-zinc-900/30">
                 {#if expanded.awayBench}<ChevronDown class="w-4 h-4" />{:else}<ChevronRight class="w-4 h-4" />{/if}
               </button>
             </td>
@@ -580,14 +580,14 @@ const teamFieldingStats = $derived([
           {/each}
 
           {#if benchPlayers(game.home_team_id).length > 0}
-          <tr>
-            <td class="p-0 border-b border-zinc-800 sticky left-0 bg-zinc-900 border-r border-zinc-800">
-              <button onclick={() => toggle('homeBench')} class="w-full flex items-center py-3 px-4 text-xs font-semibold uppercase tracking-widest text-zinc-400 hover:bg-zinc-800/40 transition-colors bg-zinc-900/30">
+          <tr class="group">
+            <td class="p-0 border-b border-zinc-800 sticky left-0 bg-zinc-900">
+              <button onclick={() => toggle('homeBench')} class="w-full flex items-center py-3 px-4 text-xs font-semibold uppercase tracking-widest text-zinc-400 group-hover:bg-zinc-800/40 transition-colors bg-zinc-900/30">
                 Bench Reserves ({benchPlayers(game.home_team_id).length})
               </button>
             </td>
             <td colspan="12" class="p-0 border-b border-zinc-800 text-right">
-              <button onclick={() => toggle('homeBench')} class="w-full flex items-center justify-end py-3 px-4 text-zinc-400 hover:bg-zinc-800/40 transition-colors bg-zinc-900/30">
+              <button onclick={() => toggle('homeBench')} class="w-full flex items-center justify-end py-3 px-4 text-zinc-400 group-hover:bg-zinc-800/40 transition-colors bg-zinc-900/30">
                 {#if expanded.homeBench}<ChevronDown class="w-4 h-4" />{:else}<ChevronRight class="w-4 h-4" />{/if}
               </button>
             </td>

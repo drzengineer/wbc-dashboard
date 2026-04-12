@@ -121,17 +121,17 @@ const teamFieldingStats = $derived([
     </button>
   </div>
 
-    <div class="bg-linear-to-br from-zinc-950 via-zinc-900 to-zinc-950 px-4 py-8 sm:px-6 sm:py-12 relative overflow-hidden min-h-[140px]">
+    <div class="bg-linear-to-br from-zinc-950 via-zinc-900 to-zinc-950 px-4 py-8 sm:px-6 sm:py-12 relative overflow-hidden min-h-35">
       <!-- Background Away Flag -->
-      <div class="absolute top-1/2 -translate-y-1/2 flex items-center pointer-events-none left-30 max-sm:left-5">
-        <div class="scale-[12] sm:scale-[17] opacity-8 mask-r-from-0% mask-r-to-100%">
+      <div class="absolute top-1/2 -translate-y-1/2 pointer-events-none left-30 max-sm:left-5">
+        <div class="scale-[12] sm:scale-[17] opacity-8" style="mask-image: linear-gradient(to right, transparent 0%, black 25%, black 45%, transparent 100%); -webkit-mask-image: linear-gradient(to right, transparent 0%, black 25%, black 45%, transparent 100%);">
           <Flag country={game.away_team_abbreviation}/>
         </div>
       </div>
 
       <!-- Background Home Flag -->
-      <div class="absolute top-1/2 -translate-y-1/2 flex items-center pointer-events-none right-30 max-sm:right-5">
-        <div class="scale-[12] sm:scale-[17] opacity-8 mask-l-from-0% mask-l-to-100%">
+      <div class="absolute top-1/2 -translate-y-1/2 pointer-events-none right-30 max-sm:right-5">
+        <div class="scale-[12] sm:scale-[17] opacity-8" style="mask-image: linear-gradient(to left, transparent 0%, black 25%, black 45%, transparent 100%); -webkit-mask-image: linear-gradient(to left, transparent 0%, black 25%, black 45%, transparent 100%);">
           <Flag country={game.home_team_abbreviation}/>
         </div>
       </div>

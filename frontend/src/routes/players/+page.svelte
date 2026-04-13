@@ -10,10 +10,6 @@ import type { PageData } from "./$types";
 
 const { data }: { data: PageData } = $props();
 
-let isLeaderboardExpanded = $state(true);
-function toggleLeaderboardExpansion() {
-	isLeaderboardExpanded = !isLeaderboardExpanded;
-}
 
 type Tab = "Batting" | "Pitching";
 let activeTab = $state<Tab>("Batting");
@@ -39,7 +35,7 @@ type BatStat =
 	| "season_batting_slg"
 	| "season_batting_ops"
 	| "season_batting_sb";
-let batSortKey = $state<BatStat>("season_batting_ops");
+let batSortKey = $state<BatStat>("season_batting_avg");
 
 type PitStat =
 	| "games_played"
@@ -224,16 +220,17 @@ function sortClass(key: string, currentKey: string) {
 	<!-- Leaderboard table -->
 	<GameDetailTableSection 
 		title={activeTab === 'Batting' ? 'Batting Leaderboard' : 'Pitching Leaderboard'}
-		expanded={isLeaderboardExpanded}
-		onToggle={toggleLeaderboardExpansion}
+		expanded={true}
+		collapsible={false}
+		onToggle={() => {}}
 	>
 		{#snippet children()}
 			<table class="w-full text-sm min-w-max table-fixed">
-				<thead class="text-xs text-[#8888a0] border-b border-zinc-800 bg-zinc-900/50">
+				<thead class="bg-zinc-950/50 text-zinc-400 uppercase tracking-wider text-xs sm:text-sm font-medium border-b border-zinc-800">
 					{#if activeTab === 'Batting'}
 						<tr>
-<th class="sticky-column text-left px-4 py-3 font-medium w-48 bg-zinc-900 z-10"># Player</th>
-<th class="px-2 py-3 font-medium text-center w-24">Team</th>
+<th class="sticky-column text-left py-3 px-4 w-[250px] bg-[#111113] z-10"># Player</th>
+<th class="px-2 py-3 font-medium text-center w-22">Team</th>
 <th class="px-2 py-3 font-medium text-center w-14">
 	<button type="button" onclick={() => batSortKey = 'games_played'} class="w-full block transition-colors {sortClass('games_played', batSortKey)}">G</button>
 </th>
@@ -264,8 +261,8 @@ function sortClass(key: string, currentKey: string) {
 						</tr>
 					{:else}
 						<tr>
-<th class="sticky-column text-left px-4 py-3 font-medium w-48 bg-zinc-900 z-10"># Player</th>
-<th class="px-2 py-3 font-medium text-center w-24">Team</th>
+<th class="sticky-column text-left py-3 px-4 w-[250px] bg-[#111113] z-10"># Player</th>
+<th class="px-2 py-3 font-medium text-center w-22">Team</th>
 <th class="px-2 py-3 font-medium text-center w-14">
 	<button type="button" onclick={() => pitSortKey = 'games_played'} class="w-full block transition-colors {sortClass('games_played', pitSortKey)}">G</button>
 </th>
@@ -297,7 +294,7 @@ function sortClass(key: string, currentKey: string) {
 					{#each displayRows as row, i (row.person_id + '_' + row.season)}
 						<tr class="border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/30 transition-colors">
 							{#if activeTab === 'Batting'}
-<td class="sticky-column px-4 py-2.5 bg-zinc-900 z-10">
+<td class="sticky-column px-4 py-2.5 z-10">
 	<div class="flex items-center gap-3">
 		<span class="text-[#555570] text-xs w-4">{i + 1}</span>
 		<a href="/players/{row.person_id}" class="font-medium text-white hover:text-accent transition-colors truncate">{row.full_name}</a>
@@ -309,17 +306,17 @@ function sortClass(key: string, currentKey: string) {
 		<span class="text-[#8888a0]">{row.team_abbreviation}</span>
 	</div>
 </td>
-								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'games_played' ? 'text-accent font-semibold' : 'text-[#8888a0]'}">{fmtNum(row.games_played)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'season_batting_ab' ? 'text-accent font-semibold' : 'text-[#8888a0]'}">{fmtNum(row.season_batting_ab)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums font-mono {batSortKey === 'season_batting_avg' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtAvg(row.season_batting_avg)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'games_played' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.games_played)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'season_batting_ab' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_batting_ab)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'season_batting_avg' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtAvg(row.season_batting_avg)}</td>
 								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'season_batting_hr' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_batting_hr)}</td>
 								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'season_batting_rbi' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_batting_rbi)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums font-mono {batSortKey === 'season_batting_obp' ? 'text-accent font-semibold' : 'text-[#8888a0]'}">{fmtNum(row.season_batting_obp)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums font-mono {batSortKey === 'season_batting_slg' ? 'text-accent font-semibold' : 'text-[#8888a0]'}">{fmtNum(row.season_batting_slg)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums font-mono {batSortKey === 'season_batting_ops' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtAvg(row.season_batting_ops)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'season_batting_sb' ? 'text-accent font-semibold' : 'text-[#8888a0]'}">{fmtNum(row.season_batting_sb)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'season_batting_obp' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_batting_obp)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'season_batting_slg' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_batting_slg)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'season_batting_ops' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtAvg(row.season_batting_ops)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'season_batting_sb' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_batting_sb)}</td>
 							{:else}
-<td class="sticky-column px-4 py-2.5 bg-zinc-900 z-10">
+<td class="sticky-column px-4 py-2.5 z-10">
 	<div class="flex items-center gap-3">
 		<span class="text-[#555570] text-xs w-4">{i + 1}</span>
 		<a href="/players/{row.person_id}" class="font-medium text-white hover:text-accent transition-colors truncate">{row.full_name}</a>
@@ -331,14 +328,14 @@ function sortClass(key: string, currentKey: string) {
 		<span class="text-[#8888a0]">{row.team_abbreviation}</span>
 	</div>
 </td>
-								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'games_played' ? 'text-accent font-semibold' : 'text-[#8888a0]'}">{fmtNum(row.games_played)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums font-mono {pitSortKey === 'season_pitching_era' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_pitching_era)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums font-mono {pitSortKey === 'season_pitching_ip' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtIp(row.season_pitching_ip)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'games_played' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.games_played)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'season_pitching_era' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_pitching_era)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'season_pitching_ip' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtIp(row.season_pitching_ip)}</td>
 								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'season_pitching_so' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_pitching_so)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'season_pitching_bb' ? 'text-accent font-semibold' : 'text-[#8888a0]'}">{fmtNum(row.season_pitching_bb)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'season_pitching_bb' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_pitching_bb)}</td>
 								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'season_pitching_w' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_pitching_w)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'season_pitching_l' ? 'text-accent font-semibold' : 'text-[#8888a0]'}">{fmtNum(row.season_pitching_l)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'season_pitching_sv' ? 'text-accent font-semibold' : 'text-[#8888a0]'}">{fmtNum(row.season_pitching_sv)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'season_pitching_l' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_pitching_l)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'season_pitching_sv' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_pitching_sv)}</td>
 							{/if}
 						</tr>
 					{/each}

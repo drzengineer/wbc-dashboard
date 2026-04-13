@@ -2,11 +2,12 @@
   import { ChevronDown, ChevronRight } from "lucide-svelte";
 
   // ─── Props ────────────────────────────────────────────────────────────────────
-  let { title, expanded, onToggle, children }: {
+  let { title, expanded, onToggle, children, collapsible = true }: {
     title: string;
     expanded: boolean;
     onToggle: () => void;
     children: any;
+    collapsible?: boolean;
   } = $props();
 </script>
 
@@ -33,6 +34,7 @@
 </style>
 
 <section class="border-b border-border">
+  {#if collapsible}
   <button onclick={onToggle}
     class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
     <span class="flex items-center gap-2.5 font-medium text-white">
@@ -41,8 +43,15 @@
     {#if expanded}<ChevronDown class="w-5 h-5 text-zinc-500" />
     {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
   </button>
+  {:else}
+  <div class="flex items-center px-6 py-4 text-base">
+    <span class="flex items-center gap-2.5 font-medium text-white">
+      {title}
+    </span>
+  </div>
+  {/if}
 
-  {#if expanded}
+  {#if !collapsible || expanded}
   <div class="px-6 pb-6">
     <div class="rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800">
       <div class="overflow-x-auto [&::-webkit-overflow-scrolling:touch] relative isolate">

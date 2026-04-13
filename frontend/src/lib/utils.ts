@@ -89,6 +89,27 @@ export function roundBadgeClass(label: string): string {
 }
 
 /**
+ * Format outs into baseball Innings Pitched (e.g., 3 -> 1, 4 -> 1.1)
+ */
+export function formatIP(outs: number | null | undefined): string {
+	if (!outs) return "0";
+	const full = Math.floor(outs / 3);
+	const rem = outs % 3;
+	return rem > 0 ? `${full}.${rem}` : `${full}`;
+}
+
+/**
+ * Format a fraction as a percentage string
+ */
+export function formatPct(
+	n: number | null | undefined,
+	d: number | null | undefined,
+): string {
+	if (!n || !d || d === 0) return "0%";
+	return `${Math.round((n / d) * 100)}%`;
+}
+
+/**
  * Builds TeamStats object from flat GameDetailRow
  */
 import type { GameDetailRow, TeamStats } from './types';

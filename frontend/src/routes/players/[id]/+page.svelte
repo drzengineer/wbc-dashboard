@@ -294,21 +294,21 @@ function resultColor(log: any) {
 				<span class="text-accent mr-1">{selectedSeason}</span> Profile
 			</h2>
 			
-			<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-hover border border-border mb-2">
+			<div class="inline-flex items-center gap-1 px-2 py-0.5 md:gap-1.5 md:px-3 md:py-1 rounded-full bg-surface-hover border border-border mb-2">
 				{#if playerAttribute.icon === Zap}
-					<Zap class="w-3 h-3 {playerAttribute.color}" />
+				<Zap class="w-2.5 h-2.5 md:w-3 md:h-3 {playerAttribute.color}" />
 				{:else if playerAttribute.icon === Shield}
-					<Shield class="w-3 h-3 {playerAttribute.color}" />
+				<Shield class="w-2.5 h-2.5 md:w-3 md:h-3 {playerAttribute.color}" />
 				{:else if playerAttribute.icon === Target}
-					<Target class="w-3 h-3 {playerAttribute.color}" />
+				<Target class="w-2.5 h-2.5 md:w-3 md:h-3 {playerAttribute.color}" />
 				{:else if playerAttribute.icon === Trophy}
-					<Trophy class="w-3 h-3 {playerAttribute.color}" />
+				<Trophy class="w-2.5 h-2.5 md:w-3 md:h-3 {playerAttribute.color}" />
 				{:else if playerAttribute.icon === Activity}
-					<Activity class="w-3 h-3 {playerAttribute.color}" />
+				<Activity class="w-2.5 h-2.5 md:w-3 md:h-3 {playerAttribute.color}" />
 				{:else}
-					<Star class="w-3 h-3 {playerAttribute.color}" />
+				<Star class="w-2.5 h-2.5 md:w-3 md:h-3 {playerAttribute.color}" />
 				{/if}
-				<span class="text-[10px] font-black uppercase tracking-widest {playerAttribute.color}">
+				<span class="text-[9px] md:text-[10px] font-black uppercase tracking-widest {playerAttribute.color}">
 					{playerAttribute.label}
 				</span>
 			</div>

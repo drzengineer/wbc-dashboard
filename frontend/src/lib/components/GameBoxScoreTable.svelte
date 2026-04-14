@@ -8,7 +8,7 @@ let { game }: { game: GameSummary } = $props();
 <table class="w-full text-sm sm:text-base min-w-max">
   <thead class="bg-zinc-950/50 text-zinc-400 uppercase tracking-wider text-xs sm:text-sm font-medium">
     <tr class="border-b border-zinc-800">
-      <th class="text-left py-3 px-4 w-[120px] sticky-column bg-[#111113]">Team</th>
+      <th class="text-left py-3 px-4 w-30 sticky-column bg-[#111113]">Team</th>
       {#each game.away_innings as _, i}
         <th class="text-center py-3 px-3 w-9">{i + 1}</th>
       {/each}

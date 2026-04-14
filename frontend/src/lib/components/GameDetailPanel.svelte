@@ -1,5 +1,5 @@
 <script lang="ts">
-import { X } from "lucide-svelte";
+import { X, ChevronDown, ChevronRight } from "lucide-svelte";
 import GameDetailTableSection from "$lib/components/GameDetailTableSection.svelte";
 import GameDetailHeader from "$lib/components/GameDetailHeader.svelte";
 import GameBoxScoreTable from "$lib/components/GameBoxScoreTable.svelte";
@@ -106,48 +106,145 @@ const teamFieldingStats = $derived([
 
   <GameDetailHeader {game} />
 
-  <GameDetailTableSection title="Box Score" expanded={expanded.boxscore} onToggle={() => toggle('boxscore')}>
-    <GameBoxScoreTable {game} />
-  </GameDetailTableSection>
+  <section class="border-b border-border">
+    <button onclick={() => toggle('boxscore')}
+      class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
+      <span class="flex items-center gap-2.5 font-medium text-white">
+        Box Score
+      </span>
+      {#if expanded.boxscore}<ChevronDown class="w-5 h-5 text-zinc-500" />
+      {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
+    </button>
+    {#if expanded.boxscore}
+      <GameDetailTableSection>
+        <GameBoxScoreTable {game} />
+      </GameDetailTableSection>
+    {/if}
+  </section>
 
-  <GameDetailTableSection title="Team Batting" expanded={expanded.teamBatting} onToggle={() => toggle('teamBatting')}>
-    <GameTeamStatsTable stats={teamBattingStats} awayAbbr={game.away_team_abbreviation} homeAbbr={game.home_team_abbreviation} />
-  </GameDetailTableSection>
+  <section class="border-b border-border">
+    <button onclick={() => toggle('teamBatting')}
+      class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
+      <span class="flex items-center gap-2.5 font-medium text-white">
+        Team Batting
+      </span>
+      {#if expanded.teamBatting}<ChevronDown class="w-5 h-5 text-zinc-500" />
+      {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
+    </button>
+    {#if expanded.teamBatting}
+      <GameDetailTableSection>
+        <GameTeamStatsTable stats={teamBattingStats} awayAbbr={game.away_team_abbreviation} homeAbbr={game.home_team_abbreviation} />
+      </GameDetailTableSection>
+    {/if}
+  </section>
 
-  <GameDetailTableSection title="Team Pitching" expanded={expanded.teamPitching} onToggle={() => toggle('teamPitching')}>
-    <GameTeamStatsTable stats={teamPitchingStats} awayAbbr={game.away_team_abbreviation} homeAbbr={game.home_team_abbreviation} />
-  </GameDetailTableSection>
+  <section class="border-b border-border">
+    <button onclick={() => toggle('teamPitching')}
+      class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
+      <span class="flex items-center gap-2.5 font-medium text-white">
+        Team Pitching
+      </span>
+      {#if expanded.teamPitching}<ChevronDown class="w-5 h-5 text-zinc-500" />
+      {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
+    </button>
+    {#if expanded.teamPitching}
+      <GameDetailTableSection>
+        <GameTeamStatsTable stats={teamPitchingStats} awayAbbr={game.away_team_abbreviation} homeAbbr={game.home_team_abbreviation} />
+      </GameDetailTableSection>
+    {/if}
+  </section>
 
-  <GameDetailTableSection title="Team Fielding" expanded={expanded.teamFielding} onToggle={() => toggle('teamFielding')}>
-    <GameTeamStatsTable stats={teamFieldingStats} awayAbbr={game.away_team_abbreviation} homeAbbr={game.home_team_abbreviation} />
-  </GameDetailTableSection>
+  <section class="border-b border-border">
+    <button onclick={() => toggle('teamFielding')}
+      class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
+      <span class="flex items-center gap-2.5 font-medium text-white">
+        Team Fielding
+      </span>
+      {#if expanded.teamFielding}<ChevronDown class="w-5 h-5 text-zinc-500" />
+      {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
+    </button>
+    {#if expanded.teamFielding}
+      <GameDetailTableSection>
+        <GameTeamStatsTable stats={teamFieldingStats} awayAbbr={game.away_team_abbreviation} homeAbbr={game.home_team_abbreviation} />
+      </GameDetailTableSection>
+    {/if}
+  </section>
 
   {#if awayLineup.length > 0}
-  <GameDetailTableSection title={`${game.away_team_abbreviation} Batting Lineup`} expanded={expanded.awayLineup} onToggle={() => toggle('awayLineup')}>
-    <GameBattingTable players={awayLineup} bench={awayBench} benchExpanded={expanded.awayBench} onToggleBench={() => toggle('awayBench')} />
-  </GameDetailTableSection>
+  <section class="border-b border-border">
+    <button onclick={() => toggle('awayLineup')}
+      class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
+      <span class="flex items-center gap-2.5 font-medium text-white">
+        {game.away_team_abbreviation} Batting Lineup
+      </span>
+      {#if expanded.awayLineup}<ChevronDown class="w-5 h-5 text-zinc-500" />
+      {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
+    </button>
+    {#if expanded.awayLineup}
+      <GameDetailTableSection>
+        <GameBattingTable players={awayLineup} bench={awayBench} benchExpanded={expanded.awayBench} onToggleBench={() => toggle('awayBench')} />
+      </GameDetailTableSection>
+    {/if}
+  </section>
   {/if}
 
   {#if homeLineup.length > 0}
-  <GameDetailTableSection title={`${game.home_team_abbreviation} Batting Lineup`} expanded={expanded.homeLineup} onToggle={() => toggle('homeLineup')}>
-    <GameBattingTable players={homeLineup} bench={homeBench} benchExpanded={expanded.homeBench} onToggleBench={() => toggle('homeBench')} />
-  </GameDetailTableSection>
+  <section class="border-b border-border">
+    <button onclick={() => toggle('homeLineup')}
+      class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
+      <span class="flex items-center gap-2.5 font-medium text-white">
+        {game.home_team_abbreviation} Batting Lineup
+      </span>
+      {#if expanded.homeLineup}<ChevronDown class="w-5 h-5 text-zinc-500" />
+      {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
+    </button>
+    {#if expanded.homeLineup}
+      <GameDetailTableSection>
+        <GameBattingTable players={homeLineup} bench={homeBench} benchExpanded={expanded.homeBench} onToggleBench={() => toggle('homeBench')} />
+      </GameDetailTableSection>
+    {/if}
+  </section>
   {/if}
 
   {#if awayPitchers.length > 0}
-  <GameDetailTableSection title={`${game.away_team_abbreviation} Pitching`} expanded={expanded.awayPitching} onToggle={() => toggle('awayPitching')}>
-    <GamePitchingTable pitchers={awayPitchers} />
-  </GameDetailTableSection>
+  <section class="border-b border-border">
+    <button onclick={() => toggle('awayPitching')}
+      class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
+      <span class="flex items-center gap-2.5 font-medium text-white">
+        {game.away_team_abbreviation} Pitching
+      </span>
+      {#if expanded.awayPitching}<ChevronDown class="w-5 h-5 text-zinc-500" />
+      {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
+    </button>
+    {#if expanded.awayPitching}
+      <GameDetailTableSection>
+        <GamePitchingTable pitchers={awayPitchers} />
+      </GameDetailTableSection>
+    {/if}
+  </section>
   {/if}
 
   {#if homePitchers.length > 0}
-  <GameDetailTableSection title={`${game.home_team_abbreviation} Pitching`} expanded={expanded.homePitching} onToggle={() => toggle('homePitching')}>
-    <GamePitchingTable pitchers={homePitchers} />
-  </GameDetailTableSection>
+  <section class="border-b border-border">
+    <button onclick={() => toggle('homePitching')}
+      class="w-full flex items-center justify-between px-6 py-4 hover:bg-zinc-800/40 transition-colors text-base">
+      <span class="flex items-center gap-2.5 font-medium text-white">
+        {game.home_team_abbreviation} Pitching
+      </span>
+      {#if expanded.homePitching}<ChevronDown class="w-5 h-5 text-zinc-500" />
+      {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
+    </button>
+    {#if expanded.homePitching}
+      <GameDetailTableSection>
+        <GamePitchingTable pitchers={homePitchers} />
+      </GameDetailTableSection>
+    {/if}
+  </section>
   {/if}
 
   <div class="px-6 py-4 bg-zinc-950/80 text-xs sm:text-sm text-zinc-500 flex flex-wrap gap-x-6 gap-y-2">
     <span><span class="text-zinc-600 mr-1">Season</span> {game.season}</span>
+    <span><span class="text-zinc-600 mr-1">Date</span> {game.official_date}</span>
     {#if game.pool_group && game.pool_group.toLowerCase().includes('pool')}<span><span class="text-zinc-600 mr-1">Pool</span> {game.pool_group}</span>{/if}
     <span><span class="text-zinc-600 mr-1">Venue</span> {game.venue_name}</span>
   </div>

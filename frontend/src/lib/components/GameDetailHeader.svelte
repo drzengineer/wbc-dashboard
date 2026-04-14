@@ -1,5 +1,4 @@
 <script lang="ts">
-import { Calendar, MapPin } from "lucide-svelte";
 import Flag from "$lib/components/Flag.svelte";
 import type { GameSummary } from "$lib/types";
 import { roundBadgeClass, roundLabel } from "$lib/utils";
@@ -42,15 +41,6 @@ let { game }: { game: GameSummary } = $props();
     </div>
 
     <div class="text-center space-y-3 sm:space-y-6">
-      <div class="flex items-center justify-center gap-1 text-[10px] sm:text-sm text-zinc-500 whitespace-nowrap overflow-visible">
-        <Calendar class="w-3 h-3" />
-        <span class="hidden sm:inline">{game.official_date}</span>
-        <span class="sm:hidden">{game.official_date.split('-').slice(1).join('/')}</span>
-      </div>
-      <div class="hidden sm:flex flex items-center justify-center gap-1 text-[10px] sm:text-sm text-zinc-500 whitespace-nowrap overflow-visible">
-        <MapPin class="w-4 h-4  overflow-visible" />
-        <span class="truncate">{game.venue_name}</span>
-      </div>
       <div class="flex flex-col items-center gap-1.5">
         <span class="border rounded-full px-1.5 py-0.5 sm:px-3 sm:py-0.5 font-medium text-center text-[10px] sm:text-xs whitespace-nowrap {roundBadgeClass(roundLabel(game))}">
           {roundLabel(game)}

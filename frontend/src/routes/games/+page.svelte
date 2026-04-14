@@ -26,6 +26,26 @@ $effect(() => {
     }
 });
 
+// Handle URL parameters for direct game linking
+$effect(() => {
+    const url = new URL(window.location.href);
+    const seasonParam = url.searchParams.get('season');
+    const gameParam = url.searchParams.get('game');
+    
+    if (seasonParam && data.seasons.includes(Number(seasonParam))) {
+        selectedSeason = Number(seasonParam);
+    }
+    
+    if (gameParam) {
+        const gameId = Number(gameParam);
+        const targetGame = data.games.find((g: any) => g.game_pk === gameId);
+        if (targetGame) {
+            // Wait for season to be set first
+            setTimeout(() => openGame(targetGame), 0);
+        }
+    }
+});
+
 // Reset filters on season change
 $effect(() => {
     selectedSeason.valueOf();

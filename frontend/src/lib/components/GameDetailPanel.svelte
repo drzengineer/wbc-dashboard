@@ -1,6 +1,6 @@
 <script lang="ts">
 import { X, ChevronDown, ChevronRight, Calendar, MapPin } from "lucide-svelte";
-import GameDetailTableSection from "$lib/components/GameDetailTableSection.svelte";
+import TableContainer from "$lib/components/TableContainer.svelte";
 import GameDetailHeader from "$lib/components/GameDetailHeader.svelte";
 import GameBoxScoreTable from "$lib/components/GameBoxScoreTable.svelte";
 import GameTeamStatsTable from "$lib/components/GameTeamStatsTable.svelte";
@@ -117,9 +117,9 @@ const teamFieldingStats = $derived([
     </button>
     {#if expanded.boxscore}
     <div class="mb-6">
-      <GameDetailTableSection>
+      <TableContainer>
         <GameBoxScoreTable {game} />
-      </GameDetailTableSection>
+      </TableContainer>
     </div>
     {/if}
   </section>
@@ -135,9 +135,9 @@ const teamFieldingStats = $derived([
     </button>
     {#if expanded.teamBatting}
     <div class="mb-6">
-      <GameDetailTableSection>
+      <TableContainer>
         <GameTeamStatsTable stats={teamBattingStats} awayAbbr={game.away_team_abbreviation} homeAbbr={game.home_team_abbreviation} />
-      </GameDetailTableSection>
+      </TableContainer>
     </div>
     {/if}
   </section>
@@ -153,9 +153,9 @@ const teamFieldingStats = $derived([
     </button>
     {#if expanded.teamPitching}
     <div class="mb-6">
-      <GameDetailTableSection>
+      <TableContainer>
         <GameTeamStatsTable stats={teamPitchingStats} awayAbbr={game.away_team_abbreviation} homeAbbr={game.home_team_abbreviation} />
-      </GameDetailTableSection>
+      </TableContainer>
     </div>
     {/if}
   </section>
@@ -171,9 +171,9 @@ const teamFieldingStats = $derived([
     </button>
     {#if expanded.teamFielding}
     <div class="mb-6">
-      <GameDetailTableSection>
+      <TableContainer>
         <GameTeamStatsTable stats={teamFieldingStats} awayAbbr={game.away_team_abbreviation} homeAbbr={game.home_team_abbreviation} />
-      </GameDetailTableSection>
+      </TableContainer>
     </div>
     {/if}
   </section>
@@ -190,9 +190,9 @@ const teamFieldingStats = $derived([
     </button>
     {#if expanded.awayLineup}
     <div class="mb-6">
-      <GameDetailTableSection>
+      <TableContainer>
         <GameBattingTable players={awayLineup} bench={awayBench} benchExpanded={expanded.awayBench} onToggleBench={() => toggle('awayBench')} />
-      </GameDetailTableSection>
+      </TableContainer>
     </div>
     {/if}
   </section>
@@ -210,9 +210,9 @@ const teamFieldingStats = $derived([
     </button>
     {#if expanded.homeLineup}
     <div class="mb-6">
-      <GameDetailTableSection>
+      <TableContainer>
         <GameBattingTable players={homeLineup} bench={homeBench} benchExpanded={expanded.homeBench} onToggleBench={() => toggle('homeBench')} />
-      </GameDetailTableSection>
+      </TableContainer>
     </div>
     {/if}
   </section>
@@ -230,9 +230,9 @@ const teamFieldingStats = $derived([
     </button>
     {#if expanded.awayPitching}
     <div class="mb-6">
-      <GameDetailTableSection>
+      <TableContainer>
         <GamePitchingTable pitchers={awayPitchers} />
-      </GameDetailTableSection>
+      </TableContainer>
     </div>
     {/if}
   </section>
@@ -250,9 +250,9 @@ const teamFieldingStats = $derived([
     </button>
     {#if expanded.homePitching}
     <div class="mb-6">
-      <GameDetailTableSection>
+      <TableContainer>
         <GamePitchingTable pitchers={homePitchers} />
-      </GameDetailTableSection>
+      </TableContainer>
     </div>
     {/if}
   </section>

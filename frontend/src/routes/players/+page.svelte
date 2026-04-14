@@ -5,7 +5,7 @@ import Flag from "$lib/components/Flag.svelte";
 import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
 import SeasonTabs from "$lib/components/SeasonTabs.svelte";
 import { fmtAvg, fmtIp, fmtNum } from "$lib/utils";
-import GameDetailTableSection from "$lib/components/GameDetailTableSection.svelte";
+import TableContainer from "$lib/components/TableContainer.svelte";
 import type { PageData } from "./$types";
 
 const { data }: { data: PageData } = $props();
@@ -264,7 +264,7 @@ function valueClass(key: string, currentKey: string) {
 	</div>
 
 	<!-- Leaderboard table -->
-	<GameDetailTableSection>
+	<TableContainer>
 		{#snippet children()}
 			<table class="w-full text-sm min-w-max">
 				<thead class="bg-zinc-950/50 text-zinc-400 uppercase tracking-wider text-xs sm:text-sm font-medium border-b border-zinc-800">
@@ -383,7 +383,7 @@ function valueClass(key: string, currentKey: string) {
 				</tbody>
 			</table>
 		{/snippet}
-	</GameDetailTableSection>
+	</TableContainer>
 
 	<!-- Pagination Controls -->
 	<div class="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">

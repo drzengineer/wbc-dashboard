@@ -40,10 +40,10 @@ let {
       <div class="flex items-center gap-3">
         <span class="text-zinc-500 w-4 text-right shrink-0">{p.batting_order}</span>
         <span class="text-zinc-400 font-mono text-xs w-6 shrink-0">{p.primary_position_abbreviation ?? ''}</span>
-        <span class="truncate">
+        <a href="/players/{p.player_id}" class="font-medium text-white hover:text-accent transition-colors truncate">
           {p.boxscore_name ?? p.full_name ?? '—'}
           {#if p.is_substitute}<span class="text-zinc-500 text-[10px] sm:text-xs ml-1 font-normal">(sub)</span>{/if}
-        </span>
+        </a>
       </div>
     </td>
     <td>{p.player_batting_ab ?? 0}</td>
@@ -83,7 +83,7 @@ let {
         <div class="flex items-center gap-3">
           <span class="text-zinc-600 w-4 text-right shrink-0">—</span>
           <span class="text-zinc-500 font-mono text-xs w-6 shrink-0">{p.primary_position_abbreviation ?? ''}</span>
-          <span class="truncate">{p.boxscore_name ?? p.full_name ?? '—'}</span>
+        <a href="/players/{p.player_id}" class="text-zinc-400 hover:text-accent transition-colors truncate">{p.boxscore_name ?? p.full_name ?? '—'}</a>
         </div>
       </td>
       <td class="text-zinc-500">{p.player_batting_ab ?? 0}</td>

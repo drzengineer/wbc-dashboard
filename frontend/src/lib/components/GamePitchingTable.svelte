@@ -27,9 +27,9 @@ let { pitchers }: { pitchers: GameDetailRow[] } = $props();
   <tr>
     <td class="px-4 text-white font-semibold sticky-column bg-[#111113]">
       <div class="flex items-center gap-3">
-        <span class="truncate">
+        <a href="/players/{p.player_id}" class="font-medium text-white hover:text-accent transition-colors truncate">
           {p.boxscore_name ?? p.full_name ?? '—'}
-        </span>
+        </a>
         <span class="text-xs ml-1.5 flex gap-1">
           {#if p.player_pitching_wins}<span class="text-zinc-400 font-bold">W</span>{/if}
           {#if p.player_pitching_losses}<span class="text-zinc-400 font-bold">L</span>{/if}

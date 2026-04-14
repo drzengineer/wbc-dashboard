@@ -61,7 +61,7 @@ const sizeClasses = $derived({
 });
 </script>
 
-<div class="bg-surface border rounded-xl py-0 transition-all duration-200 hover:border-[#3a3a4a] overflow-hidden @container
+<a href="/games?season={game.season}&game={game.game_pk}" class="block bg-surface border rounded-xl py-0 transition-all duration-200 hover:border-[#3a3a4a] overflow-hidden @container cursor-pointer hover:scale-[1.01]
 	{isChamp ? 'border-gold/40 shadow-lg shadow-gold/5' : 'border-border'}
 	{sizeClasses[size]}">
 	
@@ -153,4 +153,4 @@ const sizeClasses = $derived({
 	</div>
 	{/each}
 
-</div>
+</a>

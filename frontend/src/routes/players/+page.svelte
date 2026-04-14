@@ -35,7 +35,8 @@ type BatStat =
 	| "season_batting_slg"
 	| "season_batting_ops"
 	| "season_batting_sb";
-let batSortKey = $state<BatStat>("season_batting_avg");
+type BatSortKey = BatStat | `-${BatStat}`;
+let batSortKey = $state<BatSortKey>("season_batting_avg");
 
 type PitStat =
 	| "games_played"
@@ -46,7 +47,8 @@ type PitStat =
 	| "season_pitching_w"
 	| "season_pitching_l"
 	| "season_pitching_sv";
-let pitSortKey = $state<PitStat>("season_pitching_era");
+type PitSortKey = PitStat | `-${PitStat}`;
+let pitSortKey = $state<PitSortKey>("season_pitching_era");
 
 // Team filter
 let selectedTeams = $state<string[]>([]);
@@ -90,7 +92,11 @@ const sortedBatters = $derived(
 				selectedTeams.length === 0 ||
 				selectedTeams.includes(p.team_abbreviation),
 		)
-		.sort((a: any, b: any) => Number(b[batSortKey]) - Number(a[batSortKey])),
+		.sort((a: any, b: any) => {
+			const isAsc = batSortKey.startsWith('-');
+			const key = isAsc ? batSortKey.slice(1) : batSortKey;
+			return (Number(b[key]) - Number(a[key])) * (isAsc ? -1 : 1);
+		}),
 );
 
 const sortedPitchers = $derived(
@@ -103,26 +109,18 @@ const sortedPitchers = $derived(
 				selectedTeams.includes(p.team_abbreviation),
 		)
 		.sort((a: any, b: any) => {
-			const av = Number(a[pitSortKey]);
-			const bv = Number(b[pitSortKey]);
-			return ascendingPitStats.has(pitSortKey) ? av - bv : bv - av;
+			const isAsc = pitSortKey.startsWith('-');
+			const key = isAsc ? pitSortKey.slice(1) : pitSortKey;
+			const av = Number(a[key]);
+			const bv = Number(b[key]);
+			const base = ascendingPitStats.has(key) ? av - bv : bv - av;
+			return base * (isAsc ? -1 : 1);
 		}),
 );
 
-// Infinite scroll
-let visibleCount = $state(30);
-let sentinelRef = $state<HTMLElement | null>(null);
-
-onMount(() => {
-	const io = new IntersectionObserver(
-		(entries) => {
-			if (entries[0].isIntersecting) visibleCount += 30;
-		},
-		{ rootMargin: "200px" },
-	);
-	if (sentinelRef) io.observe(sentinelRef);
-	return () => io.disconnect();
-});
+// Pagination
+let currentPage = $state(1);
+let itemsPerPage = $state(20);
 
 $effect(() => {
 	selectedSeason;
@@ -130,23 +128,72 @@ $effect(() => {
 	batSortKey;
 	pitSortKey;
 	selectedTeams;
-	visibleCount = 30;
+	currentPage = 1;
 });
 
-const displayRows = $derived(
-	(activeTab === "Batting" ? sortedBatters : sortedPitchers).slice(
-		0,
-		visibleCount,
-	),
-);
 const totalRows = $derived(
 	(activeTab === "Batting" ? sortedBatters : sortedPitchers).length,
 );
+const totalPages = $derived(Math.ceil(totalRows / itemsPerPage));
+const startIndex = $derived((currentPage - 1) * itemsPerPage);
+const endIndex = $derived(Math.min(currentPage * itemsPerPage, totalRows));
+
+const displayRows = $derived(
+	(activeTab === "Batting" ? sortedBatters : sortedPitchers).slice(
+		startIndex,
+		endIndex,
+	),
+);
+
+function goToPage(page: number) {
+	if (page >= 1 && page <= totalPages) {
+		currentPage = page;
+		window.scrollTo({ top: 0, behavior: 'smooth' });
+	}
+}
+
+function getVisiblePageNumbers() {
+	const pages: (number | string)[] = [];
+	const maxVisible = 5;
+	
+	if (totalPages <= maxVisible) {
+		for (let i = 1; i <= totalPages; i++) pages.push(i);
+	} else {
+		pages.push(1);
+		
+		if (currentPage > 3) pages.push('...');
+		
+		const start = Math.max(2, currentPage - 1);
+		const end = Math.min(totalPages - 1, currentPage + 1);
+		
+		for (let i = start; i <= end; i++) pages.push(i);
+		
+		if (currentPage < totalPages - 2) pages.push('...');
+		
+		pages.push(totalPages);
+	}
+	
+	return pages;
+}
+
+function toggleBatSort(key: BatStat) {
+	batSortKey = batSortKey === key ? `-${key}` as BatSortKey : batSortKey === `-${key}` ? key : key;
+}
+
+function togglePitSort(key: PitStat) {
+	pitSortKey = pitSortKey === key ? `-${key}` as PitSortKey : pitSortKey === `-${key}` ? key : key;
+}
 
 function sortClass(key: string, currentKey: string) {
-	return key === currentKey
-		? "text-accent font-semibold"
-		: "text-[#8888a0] hover:text-white";
+	if (currentKey === key) return "text-accent font-semibold";
+	if (currentKey === `-${key}`) return "text-red-400 font-semibold";
+	return "text-[#8888a0] hover:text-white";
+}
+
+function valueClass(key: string, currentKey: string) {
+	if (currentKey === key) return "text-accent font-semibold";
+	if (currentKey === `-${key}`) return "text-red-400 font-semibold";
+	return "text-[#f0f0f5]";
 }
 </script>
 
@@ -154,7 +201,6 @@ function sortClass(key: string, currentKey: string) {
 	<!-- Header -->
 	<div>
 		<h1 class="text-2xl font-bold text-white tracking-tight">Players</h1>
-		<p class="text-sm text-[#8888a0] mt-1">Batting and pitching leaderboards</p>
 	</div>
 
 	<!-- Season tabs -->
@@ -229,63 +275,63 @@ function sortClass(key: string, currentKey: string) {
 				<thead class="bg-zinc-950/50 text-zinc-400 uppercase tracking-wider text-xs sm:text-sm font-medium border-b border-zinc-800">
 					{#if activeTab === 'Batting'}
 						<tr>
-<th class="sticky-column text-left py-3 px-4 w-[250px] bg-[#111113] z-10"># Player</th>
+<th class="sticky-column text-left py-3 px-4 w-62.5 bg-[#111113] z-10"># Player</th>
 <th class="px-2 py-3 font-medium text-center w-22">Team</th>
 <th class="px-2 py-3 font-medium text-center w-14">
-	<button type="button" onclick={() => batSortKey = 'games_played'} class="w-full block transition-colors {sortClass('games_played', batSortKey)}">G</button>
+	<button type="button" onclick={() => toggleBatSort('games_played')} class="w-full block transition-colors {sortClass('games_played', batSortKey)}">G</button>
 </th>
 <th class="px-2 py-3 font-medium text-center w-14">
-	<button type="button" onclick={() => batSortKey = 'season_batting_ab'} class="w-full block transition-colors {sortClass('season_batting_ab', batSortKey)}">AB</button>
+	<button type="button" onclick={() => toggleBatSort('season_batting_ab')} class="w-full block transition-colors {sortClass('season_batting_ab', batSortKey)}">AB</button>
 </th>
 <th class="px-2 py-3 font-medium text-center w-14">
-	<button type="button" onclick={() => batSortKey = 'season_batting_avg'} class="w-full block transition-colors {sortClass('season_batting_avg', batSortKey)}">AVG</button>
+	<button type="button" onclick={() => toggleBatSort('season_batting_avg')} class="w-full block transition-colors {sortClass('season_batting_avg', batSortKey)}">AVG</button>
 </th>
 <th class="px-2 py-3 font-medium text-center w-14">
-	<button type="button" onclick={() => batSortKey = 'season_batting_hr'} class="w-full block transition-colors {sortClass('season_batting_hr', batSortKey)}">HR</button>
+	<button type="button" onclick={() => toggleBatSort('season_batting_hr')} class="w-full block transition-colors {sortClass('season_batting_hr', batSortKey)}">HR</button>
 </th>
 <th class="px-2 py-3 font-medium text-center w-14">
-	<button type="button" onclick={() => batSortKey = 'season_batting_rbi'} class="w-full block transition-colors {sortClass('season_batting_rbi', batSortKey)}">RBI</button>
+	<button type="button" onclick={() => toggleBatSort('season_batting_rbi')} class="w-full block transition-colors {sortClass('season_batting_rbi', batSortKey)}">RBI</button>
 </th>
 <th class="px-2 py-3 font-medium text-center w-14">
-	<button type="button" onclick={() => batSortKey = 'season_batting_obp'} class="w-full block transition-colors {sortClass('season_batting_obp', batSortKey)}">OBP</button>
+	<button type="button" onclick={() => toggleBatSort('season_batting_sb')} class="w-full block transition-colors {sortClass('season_batting_sb', batSortKey)}">SB</button>
 </th>
 <th class="px-2 py-3 font-medium text-center w-14">
-	<button type="button" onclick={() => batSortKey = 'season_batting_slg'} class="w-full block transition-colors {sortClass('season_batting_slg', batSortKey)}">SLG</button>
+	<button type="button" onclick={() => toggleBatSort('season_batting_obp')} class="w-full block transition-colors {sortClass('season_batting_obp', batSortKey)}">OBP</button>
 </th>
 <th class="px-2 py-3 font-medium text-center w-14">
-	<button type="button" onclick={() => batSortKey = 'season_batting_ops'} class="w-full block transition-colors {sortClass('season_batting_ops', batSortKey)}">OPS</button>
+	<button type="button" onclick={() => toggleBatSort('season_batting_slg')} class="w-full block transition-colors {sortClass('season_batting_slg', batSortKey)}">SLG</button>
 </th>
 <th class="px-2 py-3 font-medium text-center w-14">
-	<button type="button" onclick={() => batSortKey = 'season_batting_sb'} class="w-full block transition-colors {sortClass('season_batting_sb', batSortKey)}">SB</button>
+	<button type="button" onclick={() => toggleBatSort('season_batting_ops')} class="w-full block transition-colors {sortClass('season_batting_ops', batSortKey)}">OPS</button>
 </th>
 						</tr>
 					{:else}
 						<tr>
-<th class="sticky-column text-left py-3 px-4 w-[250px] bg-[#111113] z-10"># Player</th>
+<th class="sticky-column text-left py-3 px-4 w-62.5 bg-[#111113] z-10"># Player</th>
 <th class="px-2 py-3 font-medium text-center w-22">Team</th>
 <th class="px-2 py-3 font-medium text-center w-14">
-	<button type="button" onclick={() => pitSortKey = 'games_played'} class="w-full block transition-colors {sortClass('games_played', pitSortKey)}">G</button>
+	<button type="button" onclick={() => togglePitSort('games_played')} class="w-full block transition-colors {sortClass('games_played', pitSortKey)}">G</button>
 </th>
 <th class="px-2 py-3 font-medium text-center w-14">
-	<button type="button" onclick={() => pitSortKey = 'season_pitching_era'} class="w-full block transition-colors {sortClass('season_pitching_era', pitSortKey)}">ERA</button>
+	<button type="button" onclick={() => togglePitSort('season_pitching_era')} class="w-full block transition-colors {sortClass('season_pitching_era', pitSortKey)}">ERA</button>
 </th>
 <th class="px-2 py-3 font-medium text-center w-14">
-	<button type="button" onclick={() => pitSortKey = 'season_pitching_ip'} class="w-full block transition-colors {sortClass('season_pitching_ip', pitSortKey)}">IP</button>
+	<button type="button" onclick={() => togglePitSort('season_pitching_ip')} class="w-full block transition-colors {sortClass('season_pitching_ip', pitSortKey)}">IP</button>
 </th>
 <th class="px-2 py-3 font-medium text-center w-14">
-	<button type="button" onclick={() => pitSortKey = 'season_pitching_so'} class="w-full block transition-colors {sortClass('season_pitching_so', pitSortKey)}">K</button>
+	<button type="button" onclick={() => togglePitSort('season_pitching_so')} class="w-full block transition-colors {sortClass('season_pitching_so', pitSortKey)}">K</button>
 </th>
 <th class="px-2 py-3 font-medium text-center w-14">
-	<button type="button" onclick={() => pitSortKey = 'season_pitching_bb'} class="w-full block transition-colors {sortClass('season_pitching_bb', pitSortKey)}">BB</button>
+	<button type="button" onclick={() => togglePitSort('season_pitching_bb')} class="w-full block transition-colors {sortClass('season_pitching_bb', pitSortKey)}">BB</button>
 </th>
 <th class="px-2 py-3 font-medium text-center w-14">
-	<button type="button" onclick={() => pitSortKey = 'season_pitching_w'} class="w-full block transition-colors {sortClass('season_pitching_w', pitSortKey)}">W</button>
+	<button type="button" onclick={() => togglePitSort('season_pitching_w')} class="w-full block transition-colors {sortClass('season_pitching_w', pitSortKey)}">W</button>
 </th>
 <th class="px-2 py-3 font-medium text-center w-14">
-	<button type="button" onclick={() => pitSortKey = 'season_pitching_l'} class="w-full block transition-colors {sortClass('season_pitching_l', pitSortKey)}">L</button>
+	<button type="button" onclick={() => togglePitSort('season_pitching_l')} class="w-full block transition-colors {sortClass('season_pitching_l', pitSortKey)}">L</button>
 </th>
 <th class="px-2 py-3 font-medium text-center w-14">
-	<button type="button" onclick={() => pitSortKey = 'season_pitching_sv'} class="w-full block transition-colors {sortClass('season_pitching_sv', pitSortKey)}">SV</button>
+	<button type="button" onclick={() => togglePitSort('season_pitching_sv')} class="w-full block transition-colors {sortClass('season_pitching_sv', pitSortKey)}">SV</button>
 </th>
 						</tr>
 					{/if}
@@ -306,15 +352,15 @@ function sortClass(key: string, currentKey: string) {
 		<span class="text-[#8888a0]">{row.team_abbreviation}</span>
 	</div>
 </td>
-								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'games_played' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.games_played)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'season_batting_ab' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_batting_ab)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'season_batting_avg' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtAvg(row.season_batting_avg)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'season_batting_hr' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_batting_hr)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'season_batting_rbi' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_batting_rbi)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'season_batting_obp' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_batting_obp)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'season_batting_slg' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_batting_slg)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'season_batting_ops' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtAvg(row.season_batting_ops)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {batSortKey === 'season_batting_sb' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_batting_sb)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('games_played', batSortKey)}">{fmtNum(row.games_played)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('season_batting_ab', batSortKey)}">{fmtNum(row.season_batting_ab)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('season_batting_avg', batSortKey)}">{fmtAvg(row.season_batting_avg)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('season_batting_hr', batSortKey)}">{fmtNum(row.season_batting_hr)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('season_batting_rbi', batSortKey)}">{fmtNum(row.season_batting_rbi)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('season_batting_sb', batSortKey)}">{fmtNum(row.season_batting_sb)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('season_batting_obp', batSortKey)}">{fmtNum(row.season_batting_obp)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('season_batting_slg', batSortKey)}">{fmtNum(row.season_batting_slg)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('season_batting_ops', batSortKey)}">{fmtAvg(row.season_batting_ops)}</td>
 							{:else}
 <td class="sticky-column px-4 py-2.5 z-10">
 	<div class="flex items-center gap-3">
@@ -328,14 +374,14 @@ function sortClass(key: string, currentKey: string) {
 		<span class="text-[#8888a0]">{row.team_abbreviation}</span>
 	</div>
 </td>
-								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'games_played' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.games_played)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'season_pitching_era' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_pitching_era)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'season_pitching_ip' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtIp(row.season_pitching_ip)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'season_pitching_so' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_pitching_so)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'season_pitching_bb' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_pitching_bb)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'season_pitching_w' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_pitching_w)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'season_pitching_l' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_pitching_l)}</td>
-								<td class="px-2 py-2.5 text-center tabular-nums {pitSortKey === 'season_pitching_sv' ? 'text-accent font-semibold' : 'text-[#f0f0f5]'}">{fmtNum(row.season_pitching_sv)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('games_played', pitSortKey)}">{fmtNum(row.games_played)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('season_pitching_era', pitSortKey)}">{fmtNum(row.season_pitching_era)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('season_pitching_ip', pitSortKey)}">{fmtIp(row.season_pitching_ip)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('season_pitching_so', pitSortKey)}">{fmtNum(row.season_pitching_so)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('season_pitching_bb', pitSortKey)}">{fmtNum(row.season_pitching_bb)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('season_pitching_w', pitSortKey)}">{fmtNum(row.season_pitching_w)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('season_pitching_l', pitSortKey)}">{fmtNum(row.season_pitching_l)}</td>
+								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('season_pitching_sv', pitSortKey)}">{fmtNum(row.season_pitching_sv)}</td>
 							{/if}
 						</tr>
 					{/each}
@@ -344,13 +390,69 @@ function sortClass(key: string, currentKey: string) {
 		{/snippet}
 	</GameDetailTableSection>
 
-	<!-- Count -->
-	<p class="text-xs text-[#555570]">Showing {Math.min(visibleCount, totalRows)} of {totalRows} players</p>
+	<!-- Pagination Controls -->
+	<div class="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
+		<p class="text-xs text-[#555570]">
+			Showing {startIndex + 1} - {endIndex} of {totalRows} players
+			<span class="text-[#666680]"> | Page {currentPage} of {totalPages}</span>
+		</p>
 
-	<!-- Infinite scroll sentinel -->
-	{#if visibleCount < totalRows}
-		<div bind:this={sentinelRef} class="mt-4 flex justify-center">
-			<LoadingSpinner />
+		<div class="flex items-center gap-2">
+			<!-- Items per page selector -->
+			<div class="flex items-center gap-2 mr-4">
+				<span class="text-xs text-[#8888a0]">Show:</span>
+				<select
+					value={itemsPerPage}
+					onchange={(e) => {
+						const target = e.target as HTMLSelectElement;
+						itemsPerPage = Number(target.value);
+						currentPage = 1;
+					}}
+					class="bg-surface border border-border rounded px-2 py-1 text-sm text-[#f0f0f5] outline-none focus:border-accent cursor-pointer"
+				>
+					<option value={20}>20</option>
+					<option value={50}>50</option>
+					<option value={100}>100</option>
+				</select>
+			</div>
+
+			<!-- Previous button -->
+			<button
+				type="button"
+				onclick={() => goToPage(currentPage - 1)}
+				disabled={currentPage === 1}
+				class="px-3 py-1.5 text-sm rounded-md bg-surface border border-border disabled:opacity-40 disabled:cursor-not-allowed hover:border-border-light transition-colors text-[#f0f0f5]"
+			>
+				← Previous
+			</button>
+
+			<!-- Page numbers -->
+			<div class="flex gap-1">
+				{#each getVisiblePageNumbers() as page}
+					{#if page === '...'}
+						<span class="px-2 py-1 text-[#8888a0]">...</span>
+					{:else}
+						<button
+							type="button"
+							onclick={() => goToPage(page as number)}
+							class="w-8 h-8 text-sm rounded-md transition-all duration-150
+								{currentPage === page
+									? 'bg-accent text-white shadow-lg shadow-accent/20'
+									: 'bg-surface border border-border hover:border-border-light text-[#f0f0f5]'}"
+						>{page}</button>
+					{/if}
+				{/each}
+			</div>
+
+			<!-- Next button -->
+			<button
+				type="button"
+				onclick={() => goToPage(currentPage + 1)}
+				disabled={currentPage === totalPages}
+				class="px-3 py-1.5 text-sm rounded-md bg-surface border border-border disabled:opacity-40 disabled:cursor-not-allowed hover:border-border-light transition-colors text-[#f0f0f5]"
+			>
+				Next →
+			</button>
 		</div>
-	{/if}
+	</div>
 </div>

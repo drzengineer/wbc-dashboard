@@ -46,45 +46,45 @@ final as (
         -- player status
         active,
         is_verified,
-        gender,
+        trim(both '"' from gender)                         as gender,
 
         -- name fields
         -- full_name is the canonical display name used across all mart models
-        trim(both '"' from full_name)          as full_name,
-        trim(both '"' from first_name)         as first_name,
-        trim(both '"' from middle_name)        as middle_name,
-        trim(both '"' from last_name)          as last_name,
-        trim(both '"' from use_name)           as use_name,
-        trim(both '"' from use_last_name)      as use_last_name,
-        trim(both '"' from boxscore_name)      as boxscore_name,
+        trim(both '"' from full_name)                      as full_name,
+        trim(both '"' from first_name)                     as first_name,
+        trim(both '"' from middle_name)                    as middle_name,
+        trim(both '"' from last_name)                      as last_name,
+        trim(both '"' from use_name)                       as use_name,
+        trim(both '"' from use_last_name)                  as use_last_name,
+        trim(both '"' from boxscore_name)                  as boxscore_name,
 
         -- biographical information
-        birth_date::date                    as birth_date,
-        birth_city,
-        birth_country,
-        mlb_debut_date::date                as mlb_debut_date,
+        birth_date::date                                   as birth_date,
+        trim(both '"' from birth_city)                     as birth_city,
+        trim(both '"' from birth_country)                  as birth_country,
+        mlb_debut_date::date                               as mlb_debut_date,
 
         -- physical attributes
-        height,
+        replace(trim(both '"' from height), '\', '')       as height,
         weight,
         current_age,
 
         -- batting / pitching handedness
-        bat_side_code,
-        pitch_hand_code,
+        trim(both '"' from bat_side_code)                  as bat_side_code,
+        trim(both '"' from pitch_hand_code)                as pitch_hand_code,
 
         -- primary jersey number from the player bio API
         -- note: per-game jersey numbers live on fct_player_game_stats
         -- because players can wear different numbers across tournaments
-        primary_number,
+        trim(both '"' from primary_number)                 as primary_number,
 
         -- primary position from the player bio API
         -- note: per-game positions live on fct_player_game_stats
         -- because players can play multiple positions across games
-        primary_position_code,
-        trim(both '"' from primary_position_name)      as primary_position_name,
-        trim(both '"' from primary_position_type)      as primary_position_type,
-        trim(both '"' from primary_position_abbreviation) as primary_position_abbreviation,
+        trim(both '"' from primary_position_code)          as primary_position_code,
+        trim(both '"' from primary_position_name)          as primary_position_name,
+        trim(both '"' from primary_position_type)          as primary_position_type,
+        trim(both '"' from primary_position_abbreviation)  as primary_position_abbreviation,
 
         -- strike zone measurements (used by pitching analysis)
         strike_zone_top,

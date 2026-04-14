@@ -183,7 +183,7 @@ let labelPositions = $derived(
 				dominant-baseline="middle"
 				class="fill-white text-[11px] font-bold tabular-nums"
 			>
-				{lp.value}
+				{Math.round(lp.value)}
 			</text>
 		{/each}
 	</svg>

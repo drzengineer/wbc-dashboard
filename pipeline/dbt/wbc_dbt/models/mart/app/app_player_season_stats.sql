@@ -104,11 +104,14 @@ final as (
 
         -- Batting stats
         a.season_batting_ab,
+        a.season_batting_hits,
         round(cast(a.season_batting_hits as numeric) / nullif(a.season_batting_ab, 0), 3) as season_batting_avg,
         a.season_batting_doubles,
         a.season_batting_triples,
         a.season_batting_hr,
         a.season_batting_rbi,
+        a.season_batting_bb,
+        a.season_batting_so,
         round(cast(a.season_batting_hits + a.season_batting_bb as numeric) / nullif(a.season_batting_pa, 0), 3) as season_batting_obp,
         round(cast(a.season_batting_tb as numeric) / nullif(a.season_batting_ab, 0), 3) as season_batting_slg,
         round(

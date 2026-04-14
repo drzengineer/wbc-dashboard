@@ -28,17 +28,6 @@ with source as (
 
 ),
 
-game_scores as (
-    select
-        game_pk,
-        max(score) as home_score,
-        min(score) as away_score,
-        sum(score) as total_runs,
-        abs(max(score) - min(score)) as run_margin
-    from {{ ref('fct_team_game_stats') }}
-    group by game_pk
-),
-
 final as (
 
     select
@@ -84,22 +73,16 @@ final as (
         if_necessary,
         tiebreaker,
 
-
-        -- metadata
-        ingested_at,
-
-        -- derived game metrics
-        gs.total_runs,
-        gs.run_margin,
-        gs.run_margin = 1 as is_one_run_game,
         -- WBC mercy rule: 10 run difference after 7 innings, 8 run difference after 5
         case
             when status_code = 'FM' then true
             else false
-        end as is_mercy_rule
+        end as is_mercy_rule,
+
+        -- metadata
+        ingested_at
 
     from source
-    left join game_scores gs using(game_pk)
 
 )
 

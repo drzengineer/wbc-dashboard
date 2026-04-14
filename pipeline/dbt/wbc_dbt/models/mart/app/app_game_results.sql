@@ -26,6 +26,16 @@ with teams as (
     from {{ ref('fct_team_game_stats') }}
 ),
 
+game_metrics as (
+    select
+        game_pk,
+        sum(score) as total_runs,
+        abs(max(score) - min(score)) as run_margin,
+        abs(max(score) - min(score)) = 1 as is_one_run_game
+    from teams
+    group by game_pk
+),
+
 away_teams as (
     select * from teams where side = 'away'
 ),
@@ -42,10 +52,7 @@ games as (
         game_type,
         venue_name,
         is_mercy_rule,
-        pool_group, 
-        is_one_run_game, 
-        run_margin, 
-        total_runs
+        pool_group
     from {{ ref('dim_games') }}
 ),
 
@@ -89,9 +96,9 @@ select
     g.is_mercy_rule,
     g.venue_name,
     g.pool_group, 
-    g.is_one_run_game, 
-    g.run_margin, 
-    g.total_runs,
+    gm.is_one_run_game, 
+    gm.run_margin, 
+    gm.total_runs,
 
     -- Metadata
     current_timestamp as refreshed_at,
@@ -111,6 +118,7 @@ select
 from games g
 left join away_teams away on g.game_pk = away.game_pk
 left join home_teams home on g.game_pk = home.game_pk
+left join game_metrics gm on g.game_pk = gm.game_pk
 left join innings i on g.game_pk = i.game_pk
 
 order by g.official_date desc

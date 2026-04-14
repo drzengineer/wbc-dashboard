@@ -90,7 +90,6 @@ async function openGame(game: FullGame) {
     <!-- Header -->
     <div>
         <h1 class="text-2xl font-bold text-white tracking-tight">Games</h1>
-        <p class="text-sm text-[#8888a0] mt-1">All tournament game results</p>
     </div>
 
     <!-- Season tabs -->

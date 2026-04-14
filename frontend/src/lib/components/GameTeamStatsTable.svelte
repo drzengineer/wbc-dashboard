@@ -19,7 +19,7 @@ let { stats, awayAbbr, homeAbbr }: {
 <table class="w-full text-sm sm:text-base min-w-max table-fixed">
   <thead class="bg-zinc-950/50 text-zinc-400 uppercase tracking-wider text-xs sm:text-sm font-medium">
     <tr class="border-b border-zinc-800">
-      <th class="text-left py-3 px-4 w-[120px] sticky-column bg-[#111113]">Team</th>
+      <th class="text-left py-3 px-4 w-30 sticky-column bg-[#111113]">Team</th>
       {#each stats as s}
         <th class="text-center py-3 px-2 w-10">{s.l}</th>
       {/each}

@@ -73,7 +73,6 @@ const TBD_CLASSES = "bg-surface border border-[#333348] border-dashed rounded-xl
 
     <div>
         <h1 class="text-2xl font-bold text-white tracking-tight">Dashboard</h1>
-        <p class="text-sm text-[#8888a0] mt-1">World Baseball Classic Overview</p>
     </div>
 
     <SeasonTabs 

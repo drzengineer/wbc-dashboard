@@ -198,10 +198,10 @@ const suggestions = [
 <button
 	type="button"
 	onclick={() => open = !open}
-	class="fixed bottom-[3%] right-[3%] z-30 w-[clamp(48px,6vw,64px)] h-[clamp(48px,6vw,64px)] rounded-full bg-accent text-white shadow-lg shadow-accent/30 hover:bg-accent-hover hover:scale-105 transition-all duration-200 flex items-center justify-center"
+	class="fixed bottom-[3%] right-[0.7%] z-30 w-[clamp(54px,7vw,70px)] h-[clamp(40px,5vw,52px)] rounded-full bg-accent text-white shadow-lg shadow-accent/30 hover:bg-accent-hover hover:scale-105 transition-all duration-200 flex items-center justify-center"
 	title="Toggle AI Chat"
 >
-	<MessageCircle class="w-[clamp(20px,3vw,28px)] h-[clamp(20px,3vw,28px)]" style="transform: scaleX(-1);" />
+	<MessageCircle class="w-[clamp(22px,3.2vw,30px)] h-[clamp(16px,2.5vw,22px)]" style="transform: scaleX(-1);" />
 </button>
 
 <style>

@@ -1,12 +1,10 @@
 <script lang="ts">
 import type { GameDetailRow } from "$lib/types";
-import GameDetailTableSection from "$lib/components/GameDetailTableSection.svelte";
 import { formatIP, formatPct } from "$lib/utils";
 
 let { pitchers }: { pitchers: GameDetailRow[] } = $props();
 </script>
 
-<GameDetailTableSection>
 <table class="gdt-table">
   <thead>
   <tr>
@@ -27,18 +25,20 @@ let { pitchers }: { pitchers: GameDetailRow[] } = $props();
 <tbody>
   {#each pitchers as p}
   <tr>
-    <td class="px-4 text-white font-semibold flex items-center gap-3 sticky-column bg-[#111113]">
-      <span class="truncate">
-        {p.boxscore_name ?? p.full_name ?? '—'}
-      </span>
-      <span class="text-xs ml-1.5 flex gap-1">
-        {#if p.player_pitching_wins}<span class="text-zinc-400 font-bold">W</span>{/if}
-        {#if p.player_pitching_losses}<span class="text-zinc-400 font-bold">L</span>{/if}
-        {#if p.player_pitching_saves}<span class="text-zinc-400 font-bold">Sv</span>{/if}
-        {#if p.player_pitching_holds}<span class="text-zinc-400 font-bold">H</span>{/if}
-        {#if p.player_pitching_bs}<span class="text-zinc-400 font-bold">BS</span>{/if}
-        {#if p.player_pitching_gs}<span class="text-zinc-500 font-normal">(GS)</span>{/if}
-      </span>
+    <td class="px-4 text-white font-semibold sticky-column bg-[#111113]">
+      <div class="flex items-center gap-3">
+        <span class="truncate">
+          {p.boxscore_name ?? p.full_name ?? '—'}
+        </span>
+        <span class="text-xs ml-1.5 flex gap-1">
+          {#if p.player_pitching_wins}<span class="text-zinc-400 font-bold">W</span>{/if}
+          {#if p.player_pitching_losses}<span class="text-zinc-400 font-bold">L</span>{/if}
+          {#if p.player_pitching_saves}<span class="text-zinc-400 font-bold">Sv</span>{/if}
+          {#if p.player_pitching_holds}<span class="text-zinc-400 font-bold">H</span>{/if}
+          {#if p.player_pitching_bs}<span class="text-zinc-400 font-bold">BS</span>{/if}
+          {#if p.player_pitching_gs}<span class="text-zinc-500 font-normal">(GS)</span>{/if}
+        </span>
+      </div>
     </td>
     <td class="text-zinc-200 font-mono">{formatIP(p.player_pitching_outs)}</td>
     <td>{p.player_pitching_hits_allowed ?? 0}</td>
@@ -55,4 +55,3 @@ let { pitchers }: { pitchers: GameDetailRow[] } = $props();
   {/each}
   </tbody>
 </table>
-</GameDetailTableSection>

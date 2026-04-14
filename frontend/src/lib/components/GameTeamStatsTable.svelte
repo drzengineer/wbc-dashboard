@@ -1,6 +1,5 @@
 <script lang="ts">
 import Flag from "$lib/components/Flag.svelte";
-import GameDetailTableSection from "$lib/components/GameDetailTableSection.svelte";
 
 interface StatRow {
   l: string;
@@ -17,7 +16,6 @@ let { stats, awayAbbr, homeAbbr }: {
 } = $props();
 </script>
 
-<GameDetailTableSection>
 <table class="gdt-table">
   <thead>
     <tr>
@@ -29,18 +27,22 @@ let { stats, awayAbbr, homeAbbr }: {
   </thead>
   <tbody>
     <tr>
-      <td class="px-4 font-semibold flex items-center gap-3 sticky-column bg-[#111113]">
-        <Flag country={awayAbbr} size="md" />
-        {awayAbbr}
+      <td class="px-4 font-semibold sticky-column bg-[#111113]">
+        <div class="flex items-center gap-3">
+          <Flag country={awayAbbr} size="md" />
+          {awayAbbr}
+        </div>
       </td>
       {#each stats as s}
         <td>{s.aS ?? s.a}</td>
       {/each}
     </tr>
     <tr>
-      <td class="px-4 font-semibold flex items-center gap-3 sticky-column bg-[#111113]">
-        <Flag country={homeAbbr} size="md" />
-        {homeAbbr}
+      <td class="px-4 font-semibold sticky-column bg-[#111113]">
+        <div class="flex items-center gap-3">
+          <Flag country={homeAbbr} size="md" />
+          {homeAbbr}
+        </div>
       </td>
       {#each stats as s}
         <td>{s.hS ?? s.h}</td>
@@ -48,4 +50,3 @@ let { stats, awayAbbr, homeAbbr }: {
     </tr>
   </tbody>
 </table>
-</GameDetailTableSection>

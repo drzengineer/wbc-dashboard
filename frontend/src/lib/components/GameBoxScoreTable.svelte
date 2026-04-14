@@ -1,12 +1,10 @@
 <script lang="ts">
 import Flag from "$lib/components/Flag.svelte";
-import GameDetailTableSection from "$lib/components/GameDetailTableSection.svelte";
 import type { GameSummary } from "$lib/types";
 
 let { game }: { game: GameSummary } = $props();
 </script>
 
-<GameDetailTableSection>
 <table class="gdt-table">
   <thead>
     <tr>
@@ -21,9 +19,11 @@ let { game }: { game: GameSummary } = $props();
   </thead>
   <tbody>
     <tr>
-      <td class="px-4 font-semibold flex items-center gap-3 sticky-column bg-[#111113]">
-        <Flag country={game.away_team_abbreviation} size="md" />
-        {game.away_team_abbreviation}
+      <td class="px-4 font-semibold sticky-column bg-[#111113]">
+        <div class="flex items-center gap-3">
+          <Flag country={game.away_team_abbreviation} size="md" />
+          {game.away_team_abbreviation}
+        </div>
       </td>
       {#each game.away_innings as run}
         <td>{run ?? '-'}</td>
@@ -33,9 +33,11 @@ let { game }: { game: GameSummary } = $props();
       <td class="text-white">{game.away_e}</td>
     </tr>
     <tr>
-      <td class="px-4 font-semibold flex items-center gap-3 sticky-column bg-[#111113]">
-        <Flag country={game.home_team_abbreviation} size="md" />
-        {game.home_team_abbreviation}
+      <td class="px-4 font-semibold sticky-column bg-[#111113]">
+        <div class="flex items-center gap-3">
+          <Flag country={game.home_team_abbreviation} size="md" />
+          {game.home_team_abbreviation}
+        </div>
       </td>
       {#each game.home_innings as run}
         <td>{run ?? '-'}</td>
@@ -46,4 +48,3 @@ let { game }: { game: GameSummary } = $props();
     </tr>
   </tbody>
 </table>
-</GameDetailTableSection>

@@ -144,7 +144,8 @@ final as (
         a.season_pitching_w,
         a.season_pitching_l,
         a.season_pitching_sv,
-        a.season_pitching_gs
+        a.season_pitching_gs,
+        a.season_pitching_bf
 
     from season_aggregates a
     left join players p

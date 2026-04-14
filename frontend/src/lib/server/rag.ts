@@ -33,29 +33,42 @@ type VectorRow = {
 async function retrieveContext(
 	embedding: number[],
 	question: string,
+	targetTables: string[],
 ): Promise<string> {
-	console.log(`[RAG] Querying pgvector — match_count=40, match_threshold=0.4`);
+	console.log(`[RAG] Querying pgvector tables: ${targetTables.join(", ")}`);
+	
+	const allResults: VectorRow[] = [];
+	const PER_TABLE_RESULTS = Math.floor(30 / targetTables.length);
 
-	const { data, error } = await supabase
-		.schema("vectors")
-		.rpc("match_embeddings", {
-			query_embedding: embedding,
-			match_count: 40,
-			match_threshold: 0.4,
-		});
+	for (const table of targetTables) {
+		console.log(`[RAG]  → Querying ${table}...`);
+		
+		const { data, error } = await supabase
+			.schema("vectors")
+			.rpc(`match_${table}`, {
+				query_embedding: embedding,
+				match_count: PER_TABLE_RESULTS,
+				match_threshold: 0.4,
+			});
 
-	if (error) throw new Error(`pgvector error: ${error.message}`);
+		if (error) {
+			console.warn(`[RAG] Warning: failed querying ${table}: ${error.message}`);
+			continue;
+		}
 
-	if (!data || data.length === 0) {
+		if (data && data.length > 0) {
+			allResults.push(...(data as VectorRow[]));
+		}
+	}
+
+	if (allResults.length === 0) {
 		console.log("[RAG] No vectors returned — context will be empty.");
 		return "";
 	}
 
-	const results = (data as VectorRow[]).sort(
-		(a, b) => b.similarity - a.similarity,
-	);
+	const results = allResults.sort((a, b) => b.similarity - a.similarity).slice(0, 40);
 
-	console.log(`[RAG] Retrieved ${results.length} vectors for: "${question}"`);
+	console.log(`[RAG] Retrieved ${results.length} total vectors for: "${question}"`);
 	console.log("[RAG] ── Matched vectors (best → worst) ─────────────────────");
 	results.forEach((r, i) => {
 		const sim = r.similarity.toFixed(4);
@@ -80,6 +93,52 @@ async function retrieveContext(
 type HistoryMessage = { role: "user" | "assistant"; content: string };
 
 // ── Question rewriting ────────────────────────────────────────────────────────
+
+async function classifyQuestionIntent(question: string): Promise<string[]> {
+	console.log(`[RAG] Classifying intent for: "${question}"`);
+
+	const completion = await groq.chat.completions.create({
+		model: "llama-3.3-70b-versatile",
+		max_tokens: 64,
+		temperature: 0,
+		messages: [
+			{
+				role: "system",
+				content: `You are a WBC question classifier. Classify what type of information is being requested.
+
+AVAILABLE CATEGORIES:
+- game_results: Game scores, results, knockouts, mercy rule, innings, venues, blowouts
+- standings: Pool standings, pool winners, win/loss records
+- team_season: Overall team season records
+- player_season: Player season stats, season leaders, advanced stats
+- player_bio: Player biographical info, height, weight, birthplace, position
+- player_game: Single game player performance
+- team_game: Team per-game stats
+
+RULES:
+- Return ONLY comma-separated category names from the list above
+- Return multiple categories if the question asks for multiple types
+- If unsure, return all categories
+- No explanation, just the comma separated list
+
+Examples:
+"Who won 2023 WBC?" → game_results
+"How did Ohtani bat in 2023?" → player_season
+"What was Ohtani's ERA in the final game?" → player_game
+"Who won Pool A?" → standings
+"How tall is Ohtani?" → player_bio
+`,
+			},
+			{ role: "user", content: question },
+		],
+	});
+
+	const categories = completion.choices[0]?.message?.content?.trim() || "game_results";
+	const targetTables = categories.split(",").map(s => s.trim()).filter(s => s.length > 0);
+	
+	console.log(`[RAG] Classified intent: ${targetTables.join(", ")}`);
+	return targetTables;
+}
 
 async function rewriteQuestion(
 	question: string,
@@ -140,8 +199,9 @@ export async function queryRagStream(
 	}
 
 	const standaloneQuestion = await rewriteQuestion(question, history);
+	const targetTables = await classifyQuestionIntent(standaloneQuestion);
 	const embedding = await embedQuestion(standaloneQuestion);
-	const context = await retrieveContext(embedding, standaloneQuestion);
+	const context = await retrieveContext(embedding, standaloneQuestion, targetTables);
 
 	if (!context) {
 		console.log("[RAG] Sending to Groq with empty context.");

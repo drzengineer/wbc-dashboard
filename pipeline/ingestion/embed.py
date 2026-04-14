@@ -1533,36 +1533,146 @@ def run():
     model = SentenceTransformer(EMBED_MODEL)
 
     with conn.cursor() as cur:
-        log.info("Preparing vectors.embeddings table...")
-        cur.execute("""
-            CREATE SCHEMA IF NOT EXISTS vectors;
-            CREATE TABLE IF NOT EXISTS vectors.embeddings (
-                id        BIGSERIAL PRIMARY KEY,
-                content   TEXT    NOT NULL,
-                embedding vector(384),
-                metadata  JSONB
-            );
-        """)
-        cur.execute("TRUNCATE vectors.embeddings;")
+        log.info("Preparing vector tables by category...")
+        cur.execute("CREATE SCHEMA IF NOT EXISTS vectors;")
+        
+        VECTOR_TABLES = [
+            "game_results",
+            "standings",
+            "team_season",
+            "player_season",
+            "player_bio",
+            "player_game",
+            "team_game"
+        ]
+        
+        for table in VECTOR_TABLES:
+            cur.execute(f"""
+                CREATE TABLE IF NOT EXISTS vectors.{table} (
+                    id        BIGSERIAL PRIMARY KEY,
+                    content   TEXT    NOT NULL,
+                    embedding vector(384),
+                    metadata  JSONB
+                );
+            """)
+            cur.execute(f"TRUNCATE vectors.{table};")
+            
+            # Create HNSW index for each table
+            cur.execute(f"""
+                CREATE INDEX IF NOT EXISTS {table}_embedding_idx 
+                ON vectors.{table} 
+                USING hnsw (embedding vector_cosine_ops);
+            """)
+
+        # Create matching RPC functions for each table
+        for table in VECTOR_TABLES:
+            cur.execute(f"""
+                CREATE OR REPLACE FUNCTION vectors.match_{table}(
+                    query_embedding vector(384),
+                    match_count int DEFAULT 20,
+                    match_threshold float DEFAULT 0.4
+                )
+                RETURNS TABLE (
+                    id bigint,
+                    content text,
+                    metadata jsonb,
+                    similarity float
+                )
+                LANGUAGE plpgsql
+                AS $$
+                BEGIN
+                    RETURN QUERY
+                    SELECT
+                        t.id,
+                        t.content,
+                        t.metadata,
+                        1 - (t.embedding <=> query_embedding) AS similarity
+                    FROM vectors.{table} t
+                    WHERE 1 - (t.embedding <=> query_embedding) > match_threshold
+                    ORDER BY t.embedding <=> query_embedding
+                    LIMIT match_count;
+                END;
+                $$;
+            """)
 
         log.info(f"Embedding and inserting in batches of {EMBED_BATCH_SIZE}...")
-        for i in range(0, total, EMBED_BATCH_SIZE):
-            batch      = sentences[i : i + EMBED_BATCH_SIZE]
-            contents   = [b["content"] for b in batch]
-            metadatas  = [json.dumps(b["metadata"]) for b in batch]
-            embeddings = model.encode(contents, normalize_embeddings=True)
+        
+        # Route sentences to appropriate tables based on source metadata
+        SOURCE_CATEGORY_MAP = {
+            # Game Results category
+            "game_results": "game_results",
+            "game_result_variants": "game_results",
+            "knockout_qa_pairs": "game_results",
+            "mercy_rule_facts": "game_results",
+            "one_run_game_facts": "game_results",
+            "high_scoring_blowout_facts": "game_results",
+            "venue_facts": "game_results",
+            "inning_scoring_facts": "game_results",
+            "rhe_facts": "game_results",
+            
+            # Standings category
+            "pool_standings": "standings",
+            "pool_standings_expanded": "standings",
+            "pool_winners": "standings",
+            
+            # Team Season category
+            "team_season_record": "team_season",
+            
+            # Player Season category
+            "player_season_stats": "player_season",
+            "player_season_adv_batting": "player_season",
+            "player_season_adv_pitching": "player_season",
+            "player_season_xbh_sb": "player_season",
+            "player_season_leaders": "player_season",
+            
+            # Player Bio category
+            "player_bio_facts": "player_bio",
+            
+            # Player Game category
+            "player_game_batting": "player_game",
+            "player_game_pitching": "player_game",
+            "player_game_notable_batting": "player_game",
+            "player_game_notable_pitching": "player_game",
+            "player_game_extra_batting": "player_game",
+            
+            # Team Game category
+            "team_game_batting_box": "team_game",
+            "team_game_pitching_box": "team_game",
+            "team_game_fielding_facts": "team_game",
+            "player_career_sentences": "player_season",
+        }
+        
+        # Group sentences by target table
+        table_batches: dict = {table: [] for table in VECTOR_TABLES}
+        
+        for sentence in sentences:
+            source = sentence["metadata"].get("source", "game_results")
+            target_table = SOURCE_CATEGORY_MAP.get(source, "game_results")
+            table_batches[target_table].append(sentence)
+        
+        # Process each table
+        total_inserted = 0
+        for table_name, table_sentences in table_batches.items():
+            log.info(f"  Processing {table_name}: {len(table_sentences)} sentences")
+            
+            for i in range(0, len(table_sentences), EMBED_BATCH_SIZE):
+                batch      = table_sentences[i : i + EMBED_BATCH_SIZE]
+                contents   = [b["content"] for b in batch]
+                metadatas  = [json.dumps(b["metadata"]) for b in batch]
+                embeddings = model.encode(contents, normalize_embeddings=True)
 
-            psycopg2.extras.execute_values(
-                cur,
-                "INSERT INTO vectors.embeddings (content, metadata, embedding) VALUES %s",
-                [(c, m, e.tolist()) for c, m, e in zip(contents, metadatas, embeddings)],
-            )
+                psycopg2.extras.execute_values(
+                    cur,
+                    f"INSERT INTO vectors.{table_name} (content, metadata, embedding) VALUES %s",
+                    [(c, m, e.tolist()) for c, m, e in zip(contents, metadatas, embeddings)],
+                )
+                
+                total_inserted += len(batch)
 
-            done = i + len(batch)
-            if done % 1000 == 0 or done == total:
-                log.info(f"  {done} / {total} inserted")
+            log.info(f"  ✓ Completed {table_name}")
 
         conn.commit()
+        log.info(f"Total vectors inserted: {total_inserted}")
 
     conn.close()
     log.info("Embedding pipeline complete.")

@@ -18,7 +18,7 @@ let {
 <table class="gdt-table">
 <thead>
   <tr>
-    <th class="text-left px-4 w-[200px] sticky-column">Player</th>
+    <th class="text-left px-4 w-50 sticky-column">Player</th>
     <th class="w-10">AB</th>
     <th class="w-10">R</th>
     <th class="w-10">H</th>

@@ -29,7 +29,7 @@ let { stats, awayAbbr, homeAbbr }: {
   </thead>
   <tbody>
     <tr>
-      <td class="px-4 font-semibold flex items-center gap-3 sticky-column">
+      <td class="px-4 font-semibold flex items-center gap-3 sticky-column bg-[#111113]">
         <Flag country={awayAbbr} size="md" />
         {awayAbbr}
       </td>
@@ -38,7 +38,7 @@ let { stats, awayAbbr, homeAbbr }: {
       {/each}
     </tr>
     <tr>
-      <td class="px-4 font-semibold flex items-center gap-3 sticky-column">
+      <td class="px-4 font-semibold flex items-center gap-3 sticky-column bg-[#111113]">
         <Flag country={homeAbbr} size="md" />
         {homeAbbr}
       </td>

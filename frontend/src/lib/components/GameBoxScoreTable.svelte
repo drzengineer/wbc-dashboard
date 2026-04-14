@@ -21,7 +21,7 @@ let { game }: { game: GameSummary } = $props();
   </thead>
   <tbody>
     <tr>
-      <td class="px-4 font-semibold flex items-center gap-3 sticky-column">
+      <td class="px-4 font-semibold flex items-center gap-3 sticky-column bg-[#111113]">
         <Flag country={game.away_team_abbreviation} size="md" />
         {game.away_team_abbreviation}
       </td>
@@ -33,7 +33,7 @@ let { game }: { game: GameSummary } = $props();
       <td class="text-white">{game.away_e}</td>
     </tr>
     <tr>
-      <td class="px-4 font-semibold flex items-center gap-3 sticky-column">
+      <td class="px-4 font-semibold flex items-center gap-3 sticky-column bg-[#111113]">
         <Flag country={game.home_team_abbreviation} size="md" />
         {game.home_team_abbreviation}
       </td>

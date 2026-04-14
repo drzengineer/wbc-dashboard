@@ -264,12 +264,7 @@ function valueClass(key: string, currentKey: string) {
 	</div>
 
 	<!-- Leaderboard table -->
-	<GameDetailTableSection 
-		title={activeTab === 'Batting' ? 'Batting Leaderboard' : 'Pitching Leaderboard'}
-		expanded={true}
-		collapsible={false}
-		onToggle={() => {}}
-	>
+	<GameDetailTableSection>
 		{#snippet children()}
 			<table class="w-full text-sm min-w-max">
 				<thead class="bg-zinc-950/50 text-zinc-400 uppercase tracking-wider text-xs sm:text-sm font-medium border-b border-zinc-800">

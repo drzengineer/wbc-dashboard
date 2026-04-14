@@ -38,7 +38,7 @@ let {
 <tbody>
   {#each players as p}
   <tr>
-    <td class="px-4 text-white font-semibold flex items-center gap-3 sticky-column">
+    <td class="px-4 text-white font-semibold flex items-center gap-3 sticky-column bg-[#111113]">
       <span class="text-zinc-500 w-4 text-right shrink-0">{p.batting_order}</span>
       <span class="text-zinc-400 font-mono text-xs w-6 shrink-0">{p.primary_position_abbreviation ?? ''}</span>
       <span class="truncate">
@@ -63,7 +63,7 @@ let {
 
   {#if bench.length > 0}
   <tr class="group">
-    <td class="p-0 sticky-column">
+    <td class="p-0 sticky-column bg-[#111113]">
       <button onclick={onToggleBench} class="w-full flex items-center py-3 px-4 text-xs font-semibold uppercase tracking-widest text-zinc-400 group-hover:bg-zinc-800/40 transition-colors bg-zinc-900/30">
         Bench Reserves ({bench.length})
       </button>
@@ -77,7 +77,7 @@ let {
   {#if benchExpanded}
     {#each bench as p}
     <tr class="bg-zinc-900/20">
-      <td class="px-4 text-zinc-400 font-medium flex items-center gap-3 sticky-column">
+      <td class="px-4 text-zinc-400 font-medium flex items-center gap-3 sticky-column bg-[#111113]">
         <span class="text-zinc-600 w-4 text-right shrink-0">—</span>
         <span class="text-zinc-500 font-mono text-xs w-6 shrink-0">{p.primary_position_abbreviation ?? ''}</span>
         <span class="truncate">{p.boxscore_name ?? p.full_name ?? '—'}</span>

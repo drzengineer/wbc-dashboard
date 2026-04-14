@@ -27,7 +27,7 @@ let { pitchers }: { pitchers: GameDetailRow[] } = $props();
 <tbody>
   {#each pitchers as p}
   <tr>
-    <td class="px-4 text-white font-semibold flex items-center gap-3 sticky-column">
+    <td class="px-4 text-white font-semibold flex items-center gap-3 sticky-column bg-[#111113]">
       <span class="truncate">
         {p.boxscore_name ?? p.full_name ?? '—'}
       </span>

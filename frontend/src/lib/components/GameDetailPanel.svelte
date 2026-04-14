@@ -1,5 +1,5 @@
 <script lang="ts">
-import { X, ChevronDown, ChevronRight } from "lucide-svelte";
+import { X, ChevronDown, ChevronRight, Calendar, MapPin } from "lucide-svelte";
 import GameDetailTableSection from "$lib/components/GameDetailTableSection.svelte";
 import GameDetailHeader from "$lib/components/GameDetailHeader.svelte";
 import GameBoxScoreTable from "$lib/components/GameBoxScoreTable.svelte";
@@ -116,9 +116,11 @@ const teamFieldingStats = $derived([
       {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
     </button>
     {#if expanded.boxscore}
+    <div class="mb-6">
       <GameDetailTableSection>
         <GameBoxScoreTable {game} />
       </GameDetailTableSection>
+    </div>
     {/if}
   </section>
 
@@ -132,9 +134,11 @@ const teamFieldingStats = $derived([
       {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
     </button>
     {#if expanded.teamBatting}
+    <div class="mb-6">
       <GameDetailTableSection>
         <GameTeamStatsTable stats={teamBattingStats} awayAbbr={game.away_team_abbreviation} homeAbbr={game.home_team_abbreviation} />
       </GameDetailTableSection>
+    </div>
     {/if}
   </section>
 
@@ -148,9 +152,11 @@ const teamFieldingStats = $derived([
       {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
     </button>
     {#if expanded.teamPitching}
+    <div class="mb-6">
       <GameDetailTableSection>
         <GameTeamStatsTable stats={teamPitchingStats} awayAbbr={game.away_team_abbreviation} homeAbbr={game.home_team_abbreviation} />
       </GameDetailTableSection>
+    </div>
     {/if}
   </section>
 
@@ -164,9 +170,11 @@ const teamFieldingStats = $derived([
       {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
     </button>
     {#if expanded.teamFielding}
+    <div class="mb-6">
       <GameDetailTableSection>
         <GameTeamStatsTable stats={teamFieldingStats} awayAbbr={game.away_team_abbreviation} homeAbbr={game.home_team_abbreviation} />
       </GameDetailTableSection>
+    </div>
     {/if}
   </section>
 
@@ -181,9 +189,11 @@ const teamFieldingStats = $derived([
       {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
     </button>
     {#if expanded.awayLineup}
+    <div class="mb-6">
       <GameDetailTableSection>
         <GameBattingTable players={awayLineup} bench={awayBench} benchExpanded={expanded.awayBench} onToggleBench={() => toggle('awayBench')} />
       </GameDetailTableSection>
+    </div>
     {/if}
   </section>
   {/if}
@@ -199,9 +209,11 @@ const teamFieldingStats = $derived([
       {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
     </button>
     {#if expanded.homeLineup}
+    <div class="mb-6">
       <GameDetailTableSection>
         <GameBattingTable players={homeLineup} bench={homeBench} benchExpanded={expanded.homeBench} onToggleBench={() => toggle('homeBench')} />
       </GameDetailTableSection>
+    </div>
     {/if}
   </section>
   {/if}
@@ -217,9 +229,11 @@ const teamFieldingStats = $derived([
       {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
     </button>
     {#if expanded.awayPitching}
+    <div class="mb-6">
       <GameDetailTableSection>
         <GamePitchingTable pitchers={awayPitchers} />
       </GameDetailTableSection>
+    </div>
     {/if}
   </section>
   {/if}
@@ -235,17 +249,24 @@ const teamFieldingStats = $derived([
       {:else}<ChevronRight class="w-5 h-5 text-zinc-500" />{/if}
     </button>
     {#if expanded.homePitching}
+    <div class="mb-6">
       <GameDetailTableSection>
         <GamePitchingTable pitchers={homePitchers} />
       </GameDetailTableSection>
+    </div>
     {/if}
   </section>
   {/if}
 
-  <div class="px-6 py-4 bg-zinc-950/80 text-xs sm:text-sm text-zinc-500 flex flex-wrap gap-x-6 gap-y-2">
-    <span><span class="text-zinc-600 mr-1">Season</span> {game.season}</span>
-    <span><span class="text-zinc-600 mr-1">Date</span> {game.official_date}</span>
-    {#if game.pool_group && game.pool_group.toLowerCase().includes('pool')}<span><span class="text-zinc-600 mr-1">Pool</span> {game.pool_group}</span>{/if}
-    <span><span class="text-zinc-600 mr-1">Venue</span> {game.venue_name}</span>
+  <div class="px-6 py-4 bg-zinc-950/80 text-xs sm:text-sm text-zinc-500 flex flex-wrap gap-x-6 gap-y-2 items-center">
+    <span class="flex items-center gap-1">
+      <Calendar class="w-3.5 h-3.5 text-zinc-600" />
+      {game.official_date}
+    </span>
+    <span class="flex items-center gap-1">
+      <MapPin class="w-3.5 h-3.5 text-zinc-600" />
+      {game.venue_name}
+    </span>
+    {#if game.pool_group && game.pool_group.toLowerCase().includes('pool')}<span>{game.pool_group}</span>{/if}
   </div>
 </div>

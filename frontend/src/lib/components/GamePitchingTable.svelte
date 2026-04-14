@@ -5,7 +5,7 @@ import { formatIP, formatPct } from "$lib/utils";
 let { pitchers }: { pitchers: GameDetailRow[] } = $props();
 </script>
 
-<table class="w-full text-sm sm:text-base min-w-max table-fixed">
+<table class="w-full text-sm sm:text-base min-w-max">
   <thead class="bg-zinc-950/50">
   <tr class="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-xs sm:text-sm font-medium">
     <th class="text-left py-3 px-4 w-[200px] sticky-column bg-[#111113]">Pitcher</th>

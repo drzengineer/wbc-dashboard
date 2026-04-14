@@ -5,7 +5,7 @@ import type { GameSummary } from "$lib/types";
 let { game }: { game: GameSummary } = $props();
 </script>
 
-<table class="w-full text-sm sm:text-base min-w-max table-fixed">
+<table class="w-full text-sm sm:text-base min-w-max">
   <thead class="bg-zinc-950/50 text-zinc-400 uppercase tracking-wider text-xs sm:text-sm font-medium">
     <tr class="border-b border-zinc-800">
       <th class="text-left py-3 px-4 w-[120px] sticky-column bg-[#111113]">Team</th>

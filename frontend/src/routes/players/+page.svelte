@@ -271,11 +271,11 @@ function valueClass(key: string, currentKey: string) {
 		onToggle={() => {}}
 	>
 		{#snippet children()}
-			<table class="w-full text-sm min-w-max table-fixed">
+			<table class="w-full text-sm min-w-max">
 				<thead class="bg-zinc-950/50 text-zinc-400 uppercase tracking-wider text-xs sm:text-sm font-medium border-b border-zinc-800">
 					{#if activeTab === 'Batting'}
 						<tr>
-<th class="sticky-column text-left py-3 px-4 w-62.5 bg-[#111113] z-10"># Player</th>
+<th class="sticky-column text-left py-3 px-4 w-30 bg-[#111113]"># Player</th>
 <th class="px-2 py-3 font-medium text-center w-22">Team</th>
 <th class="px-2 py-3 font-medium text-center w-14">
 	<button type="button" onclick={() => toggleBatSort('games_played')} class="w-full block transition-colors {sortClass('games_played', batSortKey)}">G</button>
@@ -307,7 +307,7 @@ function valueClass(key: string, currentKey: string) {
 						</tr>
 					{:else}
 						<tr>
-<th class="sticky-column text-left py-3 px-4 w-62.5 bg-[#111113] z-10"># Player</th>
+<th class="sticky-column text-left py-3 px-4 w-62.5 bg-[#111113]"># Player</th>
 <th class="px-2 py-3 font-medium text-center w-22">Team</th>
 <th class="px-2 py-3 font-medium text-center w-14">
 	<button type="button" onclick={() => togglePitSort('games_played')} class="w-full block transition-colors {sortClass('games_played', pitSortKey)}">G</button>
@@ -340,7 +340,7 @@ function valueClass(key: string, currentKey: string) {
 					{#each displayRows as row, i (row.person_id + '_' + row.season)}
 						<tr class="border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/30 transition-colors">
 							{#if activeTab === 'Batting'}
-<td class="sticky-column px-4 py-2.5 z-10">
+<td class="sticky-column px-4 py-2.5">
 	<div class="flex items-center gap-3">
 		<span class="text-[#555570] text-xs w-4">{i + 1}</span>
 		<a href="/players/{row.person_id}" class="font-medium text-white hover:text-accent transition-colors truncate">{row.full_name}</a>
@@ -362,7 +362,7 @@ function valueClass(key: string, currentKey: string) {
 								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('season_batting_slg', batSortKey)}">{fmtNum(row.season_batting_slg)}</td>
 								<td class="px-2 py-2.5 text-center tabular-nums {valueClass('season_batting_ops', batSortKey)}">{fmtAvg(row.season_batting_ops)}</td>
 							{:else}
-<td class="sticky-column px-4 py-2.5 z-10">
+<td class="sticky-column px-4 py-2.5">
 	<div class="flex items-center gap-3">
 		<span class="text-[#555570] text-xs w-4">{i + 1}</span>
 		<a href="/players/{row.person_id}" class="font-medium text-white hover:text-accent transition-colors truncate">{row.full_name}</a>

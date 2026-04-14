@@ -19,6 +19,7 @@
     z-index: 10;
     transform: translateZ(0);
     will-change: transform;
+    background-color: #111113 !important;
   }
   :global(.sticky-column::after) {
     content: '';

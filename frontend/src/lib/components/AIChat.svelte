@@ -79,7 +79,7 @@ const suggestions = [
 	"Who won the 2023 WBC?",
 	"How did Ohtani do in 2026?",
 	"how far did USA go in 2013?",
-	"Who hit the most home runs?",
+	"Where was Austin Wells born?",
 ];
 </script>
 

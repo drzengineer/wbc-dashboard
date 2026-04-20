@@ -19,12 +19,12 @@ EMBED_SCRIPT = Path(__file__).resolve().parents[3] / "ingestion" / "embed.py"
 
 @asset(
     deps=[
-        AssetKey(["analytics", "game_results"]),
-        AssetKey(["analytics", "standings"]),
-        AssetKey(["analytics", "player_game_stats"]),
-        AssetKey(["analytics", "player_tournament_stats"]),
+        AssetKey(["wbc_mart", "app_game_results"]),
+        AssetKey(["wbc_mart", "app_pool_standings"]),
+        AssetKey(["wbc_mart", "app_player_season_stats"]),
+        AssetKey(["wbc_mart", "app_game_detail"]),
     ],
-    description="Embeds analytics data via local all-MiniLM-L6-v2 (SentenceTransformer) and upserts into vectors.embeddings.",
+    description="Embeds mart app layer data via local all-MiniLM-L6-v2 (SentenceTransformer) and upserts into vectors.embeddings.",
 )
 def refresh_embeddings() -> None:
     log = get_dagster_logger()
